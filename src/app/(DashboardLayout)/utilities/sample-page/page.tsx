@@ -6,7 +6,7 @@ import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCa
 import CalendarDatePic from '@/app/(DashboardLayout)/components/dashboard/CalendarDate';
 import ReserveList from '../../components/dashboard/ReserveList';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Bookingrooms from '@/app/(DashboardLayout)/components/dashboard/Room_view';
+import Bookingrooms from '@/app/(DashboardLayout)/components/dashboard/Bookingrooms';
 
 interface BookingRoom {
   Start_date: string;

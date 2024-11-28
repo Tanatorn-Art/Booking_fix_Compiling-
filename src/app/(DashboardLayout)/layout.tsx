@@ -44,13 +44,15 @@ export default function RootLayout({
       {/* ------------------------------------------- */}
       {/* Sidebar */}
       {/* ------------------------------------------- */}
-      {!isHomePage && !isReportBookingPage && (  // Only show Sidebar if not on '/' or '/utilities/reportbooking'
+      {/* Only show Sidebar if not on '/' or '/utilities/reportbooking' */}
+      {!isHomePage && !isReportBookingPage && (
         <Sidebar
           isSidebarOpen={isSidebarOpen}
           isMobileSidebarOpen={isMobileSidebarOpen}
           onSidebarClose={() => setMobileSidebarOpen(false)}
         />
       )}
+
       {/* ------------------------------------------- */}
       {/* Main Wrapper */}
       {/* ------------------------------------------- */}
@@ -58,9 +60,11 @@ export default function RootLayout({
         {/* ------------------------------------------- */}
         {/* Header */}
         {/* ------------------------------------------- */}
-        {!isHomePage && !isReportBookingPage && (  // Only show Header if not on '/' or '/utilities/reportbooking'
+        {/* Only show Header if not on '/' or '/utilities/reportbooking' */}
+        {!isHomePage && !isReportBookingPage && (
           <Header toggleMobileSidebar={() => setMobileSidebarOpen(true)} />
         )}
+
         {/* ------------------------------------------- */}
         {/* PageContent */}
         {/* ------------------------------------------- */}

@@ -71,7 +71,7 @@ const Menuitems = () => {
       id: uniqueId(),
       title: "ข้อมูลห้องประชุม",
       icon: IconClipboardCopy,
-      href: "/utilities/typography",
+      href: "/utilities/room_details",
     },
     {
       id: uniqueId(),
