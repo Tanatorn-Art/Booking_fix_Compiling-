@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "es2017", // ใช้ ES2017 เพื่อรองรับ async/await (es5 อาจล้าสมัย)
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true, // ต้องมีเพื่อรองรับ import/export แบบ default
+    "module": "commonjs", // ใช้ commonjs แทน esnext เพื่อรองรับ Node.js
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".", // ตั้งค่า baseUrl สำหรับ paths
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/**/*" // ใช้ "src" แทนการระบุไฟล์เฉพาะ
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.js"
+  ] // อาจไม่ต้อง include ไฟล์ JS อย่าง db.jsx ถ้าไม่ใช้งานใน TypeScript
+}
