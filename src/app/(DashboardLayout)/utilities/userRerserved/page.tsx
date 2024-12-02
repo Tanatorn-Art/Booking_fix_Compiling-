@@ -3,10 +3,8 @@ import { useState, useEffect } from 'react';
 import { Typography, Table, TableHead, TableBody, TableRow, TableCell, TableContainer, Paper, Chip } from '@mui/material';
 import PageContainer from '@/app/(DashboardLayout)/components/dashboard/PageContainer';
 import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-import CalendarDatePic from '@/app/(DashboardLayout)/components/dashboard/CalendarDate';
-import ReserveList from '../../components/dashboard/ReserveList';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import UserReserved from '@/app/(DashboardLayout)/components/dashboard/UserReserved';
+import UserReserved from './UserReserved';
 
 interface BookingRoom {
   Start_date: string;
@@ -51,16 +49,13 @@ const userRerserved = () => {
   return (
     <PageContainer title="Sample Page" description="This is a sample page">
       <DashboardCard title="">
-        <Typography variant="h5" sx={{ marginTop: 2, marginLeft: 3 }}>
-          Meeting Rooms
+        <Typography variant="h3" sx={{ marginTop: 2, marginLeft: 0 }}>
+        Booking History
         </Typography>
         {/* รายการอื่น ๆ */}
         <br></br>
         {/* ตารางแสดงข้อมูล */}
         <UserReserved/>
-
-        <br />
-        <br />
       </DashboardCard>
     </PageContainer>
   );

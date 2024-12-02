@@ -1,64 +1,63 @@
-'use client';
-import React , { useEffect,useRef , forwardRef, useImperativeHandle } from "react";
-import { useState } from 'react';
-import {
-  Typography,
-  Grid,
-  CardContent,
+import { useState, useEffect } from 'react';
+import React , { useRef , forwardRef, useImperativeHandle } from "react";
+import { Typography,Table, TableHead, TableBody,
+  TableRow, TableCell, TableContainer, Paper,
+  IconButton, Dialog, DialogTitle,
+  DialogContent, DialogActions, Button ,
   Radio,
   RadioGroup,
   FormControlLabel,
-  FormControl,
+  FormControl
 } from '@mui/material';
-import { SelectPicker } from "rsuite";
-import axios from "axios";
 import PageContainer from '@/app/(DashboardLayout)/components/dashboard/PageContainer';
-import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-import BlankCard from '@/app/(DashboardLayout)/components/shared/BlankCard';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { HStack } from 'rsuite';
+import PieChartIcon from '@rsuite/icons/PieChart';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { Input } from "reactstrap";
-import { Stack ,CheckPicker,IconButton, ButtonToolbar, Loader } from 'rsuite';
-import 'rsuite/dist/rsuite.min.css'; // ต้องการสไตล์ของ rsuite
-import AddOutlineIcon from "@rsuite/icons/AddOutline";
-import { DateRangePicker } from 'rsuite'; // ไลบรารีที่ใช้ DateRangePicker
-import { TimeRangePicker } from 'rsuite'; // ไลบรารีที่ใช้ TimeRangePicker
 import dayjs from "dayjs";
 import { useToaster, Notification } from 'rsuite';
+import { SelectPicker } from "rsuite";
+import BlankCard from '@/app/(DashboardLayout)/components/shared/BlankCard';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'rsuite/dist/rsuite.min.css'; // ต้องการสไตล์ของ rsuite
+import { Stack ,CheckPicker, ButtonToolbar, Loader } from 'rsuite';
+import { DateRangePicker } from 'rsuite'; // ไลบรารีที่ใช้ DateRangePicker
+import { TimeRangePicker } from 'rsuite'; // ไลบรารีที่ใช้ TimeRangePicker
+
+
 interface Room {
   Room_Name: string;
   Capacity?: number;
   Location?: string;
 }
 
-interface Department {
+interface BookingRoom {
+  Start_date: string;
+  End_date: string;
+  Start_Time: string;
+  End_Time: string;
+  Room_Name: string;
+  Event_Name: string;
   Department_Name: string;
-}
-interface BtnServesProps {
-  label?: string; // ข้อความในปุ่ม
-  onClick?: () => void; // ฟังก์ชันที่จะถูกเรียกเมื่อคลิกปุ่ม
-  isLoading?: boolean; // สถานะเริ่มต้นของการโหลด
+  participant: string;
+  Status_Name: string;
+  Booking_ID: number;
+  User_ID: string;
 }
 
-const meeing_page: React.FC<BtnServesProps> = ({
-  label = "Create",
-  onClick = () => {},
-  isLoading = false,
-}) => {
-  const equipmentOptions = [
-    { label: 'เครื่องฉาย Projector', value: 'Projector' },
-    { label: 'Telephone conference', value: 'Telephone conference' },
-    { label: 'VDO Conference', value: 'VDO Conference' },
-    { label: 'เครื่องฉาย VCD/DVD', value: 'VCD/DVD' },
-    { label: 'Computer', value: 'Computer' },
-    { label: 'Visualizer (เครื่องฉายสไลด์)', value: 'Visualizer' },
-  ];
-  const [data, setData] = useState<Department[]>([]);
+const UserReserved = () => {
+  const [data, setData] = useState<BookingRoom[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userID, setUserID] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<BookingRoom | null>(null); // เก็บข้อมูลการจองที่เลือก
+  const [open, setOpen] = useState(false); // ควบคุมการเปิด/ปิด modal
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [currentDate, setCurrentDate] = useState<string>('');
+
   const [selectedDepartment, setSelectedDepartment] = useState<string>(""); // ต้องเป็น string
   const [selectedDepartmentType, setSelectedDepartmentType] = useState<string>("ภายใน");
-  const [toppicInput, setToppicInput] = useState("");
-  const [participantCount, setParticipantCount] = useState<string | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null); // Room ที่เลือก
-  const [rooms, setRooms] = useState<{ label: string; value: string }[]>([]); // ข้อมูลห้อง
+
 
   const [selectedDate, setSelectedDate] = useState<[Date, Date] | null>(null);
   const [selectedTime, setSelectedTime] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
@@ -66,50 +65,14 @@ const meeing_page: React.FC<BtnServesProps> = ({
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
   const [textareaValue, setTextareaValue] = useState(''); // สร้าง State สำหรับ Input
 
-  const [result, setResult] = useState<Record<string, string>>({});
-  const toaster = useToaster();
+  const [toppicInput, setToppicInput] = useState("");
+  const [selectedRoom, setSelectedRoom] = useState<string | null>(null); // Room ที่เลือก
+  const [rooms, setRooms] = useState<{ label: string; value: string }[]>([]); // ข้อมูลห้อง
+
+  const [participantCount, setParticipantCount] = useState<string | null>(null);
 
   const [username, setUsername] = useState<string | null>("");
-
-  // const sendEmail = async () => {
-  //   try {
-  //     setLoading(true);
-
-  //     const emailData = {
-  //       eventName: toppicInput,
-  //       departmentName: selectedDepartment,
-  //       Start_date: startDateFormatted,
-  //       End_date: endDateFormatted,
-  //       Start_time: startTimeFormatted,
-  //       End_time: endTimeFormatted,
-  //       participant: participantCount,
-  //       roomName: selectedRoom,
-  //       equipmentUse: trimmedEquipmentUseString,
-  //       notes: textareaValue,
-  //     };
-
-  //     const response = await fetch("/api/emails", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify(emailData), // ส่งข้อมูลในรูป JSON
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       alert("ส่งอีเมลสำเร็จ");
-  //       console.log("Response data:", data);
-  //     } else {
-  //       alert("ไม่สามารถส่งอีเมลได้");
-  //       console.error("Response status:", response.status);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error sending email:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const toaster = useToaster();
 
 
   const handleTimeChange = (value: [Date | null, Date | null] | null) => {
@@ -141,6 +104,54 @@ const meeing_page: React.FC<BtnServesProps> = ({
     }
   };
 
+  useEffect(() => {
+    const storedUserID = localStorage.getItem('username');
+    setUserID(storedUserID);
+  }, []);
+
+  // ฟังก์ชันสำหรับการอัพเดตเวลา
+  useEffect(() => {
+    const updateCurrentTime = () => {
+      const time = new Date().toLocaleTimeString();
+      setCurrentTime(time);
+    };
+
+    const updateCurrentDate = () => {
+      const date = new Date();
+      const day = String(date.getDate()).padStart(2, '0'); // เติมศูนย์หน้าหากวันเป็นตัวเลข 1 หลัก
+      const month = date.toLocaleString('default', { month: 'short' }).toLowerCase(); // เดือนแบบย่อ (เช่น 'nov')
+      const year = date.getFullYear();
+
+      setCurrentDate(`${day} ${month} ${year}`);
+    };
+
+
+    // เรียก updateCurrentTime ทุกๆ 1 วินาที
+    const intervalId = setInterval(updateCurrentTime, 1000);
+    updateCurrentDate(); // เรียกทันทีเพื่ออัพเดตวันที่ทันที
+
+    // ทำความสะอาดเมื่อคอมโพเนนต์ถูกทำลาย
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (userID) {
+      const fetchData = async () => {
+        try {
+          const response = await fetch(`/api/userbooking?User_ID=${userID}`);
+          const result = await response.json();
+          if (result.success && Array.isArray(result.meetingRooms)) {
+            setData(result.meetingRooms);
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }
+  }, [userID]);
 
   // ฟังก์ชันที่ใช้รับค่า participantCount จาก InputNumber
   const handleParticipantCountChange = (value: string) => {
@@ -148,44 +159,6 @@ const meeing_page: React.FC<BtnServesProps> = ({
       setParticipantCount(value); // เก็บค่าที่รับมาเป็น string
     }
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setToppicInput(e.target.value);
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-
-        if (typeof window !== "undefined") {
-          const storedUsername = localStorage.getItem("username");
-          setUsername(storedUsername);
-        }
-
-        const response = await axios.get("/api/rooms");
-        console.log("API Response:", response.data);
-
-        const [departmentResponse, roomResponse] = await Promise.all([
-          axios.get("/api/department"),
-          axios.get("/api/rooms"),
-        ]);
-
-        console.log('Rooms:', roomResponse.data.rooms); // ตรวจสอบข้อมูลห้อง
-        setData(departmentResponse.data.departments || []);
-        setRooms(roomResponse.data.rooms || []);
-        setRooms(
-          response.data.meetingRooms.map((room: any) => ({
-            label: room.Room_Name, // ใช้ Room_Name เป็น label
-            value: room.Room_Name, // ใช้ Room_Name เป็น value
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const handlePost = async () => {
     const equipmentUseString = JSON.stringify(selectedEquipment);
@@ -227,16 +200,16 @@ const meeing_page: React.FC<BtnServesProps> = ({
 
       const startDateFormatted = startDate.toISOString().split("T")[0];
       const endDateFormatted = endDate.toISOString().split("T")[0];
-      const startTimeFormatted = formatTime(startTime);
-      const endTimeFormatted = formatTime(endTime);
+      // const startTimeFormatted = formatTime(startTime);
+      // const endTimeFormatted = formatTime(endTime);
 
       const postData = {
         eventName: toppicInput,
         departmentName: selectedDepartment,
         Start_date: startDateFormatted,
         End_date: endDateFormatted,
-        Start_time: startTimeFormatted,
-        End_time: endTimeFormatted,
+        // Start_time: startTimeFormatted,
+        // End_time: endTimeFormatted,
         participant: Number(participantCount), // แปลงค่าให้เป็น number
         equipmentUse: trimmedEquipmentUseString,
         agency: selectedDepartmentType,
@@ -316,62 +289,134 @@ const meeing_page: React.FC<BtnServesProps> = ({
     }
   };
 
+  const formatTime = (time: string) => time.slice(0, 5);
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  };
 
+  const handleEdit = (id: number) => {
+    const booking = data.find((b) => b.Booking_ID === id); // หาข้อมูลการจองที่ตรงกับ ID
+    if (booking) {
+      setSelectedBooking(booking);
+      setOpen(true); // เปิด modal
+    }
+  };
 
-  // ฟังก์ชันจัดรูปแบบเวลา
-  const formatTime = (time: Date): string => {
-    const hours = time.getHours().toString().padStart(2, "0");
-    const minutes = time.getMinutes().toString().padStart(2, "0");
-    return `${hours}:${minutes}`;
+  const handleClose = () => {
+    setOpen(false); // ปิด modal
+    setSelectedBooking(null); // ล้างข้อมูลที่เลือก
+  };
+
+  // Sorting data based on Start_date
+  const sortedData = data.sort((a, b) => {
+    const dateA = new Date(a.Start_date);
+    const dateB = new Date(b.Start_date);
+    return dateA > dateB ? -1 : 1; // Future dates first
+  });
+
+  // Function to check if a booking is in the past
+  const isPastBooking = (startDate: string) => {
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // ตั้งเวลาเป็น 00:00:00 ของวันที่ปัจจุบัน
+
+    const bookingDate = new Date(startDate);
+    bookingDate.setHours(0, 0, 0, 0); // ตั้งเวลาเป็น 00:00:00 สำหรับวันที่การจอง
+
+    return bookingDate < currentDate; // ตรวจสอบว่าการจองนั้นอยู่ในอดีตหรือไม่
   };
 
 
-  const [loading, setLoading] = useState(isLoading);
-  const handleClick = () => {
-    onClick();
-    setLoading(true);
-    setTimeout(() => setLoading(false), 2000);
-  };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
+    <PageContainer title="User Reservations" description="This is the page displaying user reservations">
+      <div style={{ marginBottom: '10px', fontSize: '18px' }}>
+        <strong>{currentDate} | {currentTime} </strong><br />
+      </div>
 
-    <PageContainer title="Typography" description="this is Typography">
-      <Grid container spacing={3}>
-
-      <Grid item sm={12} >
-
-
-        <DashboardCard title="บันทึกการจองห้องประชุม" >
-
-          <Grid container spacing={3}>
-            <Grid item sm={12}>
-              <BlankCard>
-                <CardContent>
-
-                  {/* ======== Topic ======== */}
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
-                    <div style={{ marginRight: "30px" }}>
-                      <Typography variant="subtitle1" style={{ marginLeft: "5px", fontSize: "16px" }}>
-                        หัวข้อการประชุม
-                      </Typography>
-                      <Input
-                        className="form-control-alternative"
-                        style={{ marginLeft: "5px", marginTop: "10px", width: "710px" }}
-                        placeholder="กรุณากรอกหัวข้อ"
-                        type="text"
-                        value={toppicInput} // ผูกค่ากับ state
-                        onChange={handleInputChange} // อัปเดตค่าจากการกรอก
-                      />
-                      {loading && (
-                        <div style={{ marginTop: "10px" }}>
-                          กำลังส่งข้อมูล...
-                        </div>
+      <TableContainer component={Paper} sx={{ marginTop: 2, maxHeight: '600px', overflowY: 'auto' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell><strong>วันที่</strong></TableCell>
+              <TableCell><strong>เวลา</strong></TableCell>
+              <TableCell><strong>รายการที่จอง</strong></TableCell>
+              <TableCell><strong>เรื่อง / สถานที่ติดต่อ</strong></TableCell>
+              <TableCell><strong>หน่วยงานที่จอง</strong></TableCell>
+              <TableCell><strong>จำนวนคน</strong></TableCell>
+              <TableCell align="center"><strong>สถานะ</strong></TableCell>
+              <TableCell align="center"><strong>จัดการ</strong></TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sortedData.length > 0 ? (
+              sortedData.map((booking, index) => {
+                const isPast = isPastBooking(booking.Start_date);
+                return (
+                  <TableRow key={index} sx={{ backgroundColor: isPast ? '#f0f0f0' : 'transparent' }}>
+                    <TableCell>{formatDate(booking.Start_date)} - {formatDate(booking.End_date)}</TableCell>
+                    <TableCell>{formatTime(booking.Start_Time)} - {formatTime(booking.End_Time)}</TableCell>
+                    <TableCell>{booking.Room_Name}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+                      {booking.Event_Name}
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+                      {booking.Department_Name}
+                    </TableCell>
+                    <TableCell align="center">{booking.participant}</TableCell>
+                    <TableCell align="center">
+                      {booking.Status_Name === 'Pending' ? (
+                        <PieChartIcon style={{ color: '#f5a623', fontSize: '16px' }} />
+                      ) : (
+                        <PieChartIcon style={{ color: 'green', fontSize: '16px' }} />
                       )}
-                    </div>
-                  </div>
-                  {/* ======== Topic ======== */}
-                  {/* ======== Department  ======== */}
-                  <div style={{ marginTop: "15px", marginLeft: "5px" }}>
+                    </TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        onClick={() => handleEdit(booking.Booking_ID)}
+                        color="primary"
+                        disabled={isPast} // Disable edit button for past bookings
+                      >
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton color="error" disabled={isPast}> {/* Optionally disable delete button */ }
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} align="center">ไม่พบข้อมูลการจอง</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Modal สำหรับแสดงข้อมูลการจอง */}
+      <Dialog open={open} onClose={handleClose} >
+        <DialogTitle>แก้ไขข้อมูลการจอง</DialogTitle>
+        <DialogContent>
+          {selectedBooking && (
+              <div><Typography variant="subtitle1" style={{ marginLeft: "5px", fontSize: "16px" }}>
+                หัวข้อการประชุม
+              </Typography>
+              <Input
+                className="form-control-alternative"
+                style={{ marginLeft: "5px", marginTop: "10px", width: "550px" }}
+                placeholder=""
+                type="text"
+                value={selectedBooking.Event_Name} // ผูกค่ากับ state
+                // onChange={handleInputChange} // อัปเดตค่าจากการกรอก
+              />
+
+              {/* ======== Department  ======== */}
+              <div style={{ marginTop: "15px", marginLeft: "5px" }}>
                     <div style={{ marginBottom: "15px" }}>
                       <Typography variant="subtitle1" style={{ fontSize: "16px" }}>
                         หน่วยงานที่จัดประชุม
@@ -417,8 +462,8 @@ const meeing_page: React.FC<BtnServesProps> = ({
                     </div>
                   </div>
                   {/* ======== Department  ======== */}
-                  {/* ======== Rooms  ======== */}
-                  <div style={{ display: "flex", alignItems: "center", marginLeft: "5px", marginBottom: "25px" }}>
+                                    {/* ======== Rooms  ======== */}
+                                    <div style={{ display: "flex", alignItems: "center", marginLeft: "5px", marginBottom: "25px" }}>
                     {/* ======== ห้องที่ใช้ประชุม ======== */}
                     <div style={{ marginRight: "30px" }}>
                       <Typography variant="subtitle1" style={{ marginRight: "8px", fontSize: "16px" }}>
@@ -430,7 +475,8 @@ const meeing_page: React.FC<BtnServesProps> = ({
                           appearance="default"
                           placeholder="เลือกห้อง"
                           style={{ width: '300px'}}
-                          value={selectedRoom}
+                          // value={selectedRoom}
+                          value={selectedBooking.Room_Name}
                           onChange={(value: string | null) => setSelectedRoom(value)}
                           labelKey="label" // กำหนดให้ใช้ "label" เป็นชื่อห้อง
                           valueKey="value" // กำหนดให้ใช้ "value" เป็นค่าที่ส่งเมื่อเลือก
@@ -450,7 +496,8 @@ const meeing_page: React.FC<BtnServesProps> = ({
                           style={{ marginLeft: "5px", marginTop: "0px", width: "110px" }}
                           placeholder="กรอกจำนวน"
                           type="text"
-                          value={participantCount || ""} // ผูกค่ากับ state
+                          // value={participantCount || ""} // ผูกค่ากับ state
+                          value={selectedBooking.participant} // ผูกค่ากับ state
                           onChange={(e) => handleParticipantCountChange(e.target.value)} // อัปเดตค่าจากการกรอก
                         />
                         </Stack>
@@ -458,8 +505,9 @@ const meeing_page: React.FC<BtnServesProps> = ({
                     </div>
                   </div>
                   {/* ======== Rooms  ======== */}
-                  {/* ======== Date Select  ======== */}
-                  <div style={{ display: "flex", alignItems: "center", marginTop: "15px", marginLeft: "5px" }}>
+
+                                    {/* ======== Date Select  ======== */}
+                                    <div style={{ display: "flex", alignItems: "center", marginTop: "15px", marginLeft: "5px" }}>
                   {/* วันที่ใช้ห้อง */}
                     <div style={{ marginRight: "30px" }}>
                       <Typography variant="subtitle1" style={{ marginRight: "8px", fontSize: "16px" }}>
@@ -494,113 +542,26 @@ const meeing_page: React.FC<BtnServesProps> = ({
                       </div>
                   </div>
                   {/* ======== Date Select  ======== */}
-
-                  {/* ======== Equipment Use Select  ======== */}
-                  <div style={{ display: "flex",
-                  alignItems: "center" ,
-                  marginLeft: "5px",
-                  marginTop: "20px"}}>
-                    <div style={{ marginRight: "30px" }}>
-                      <Typography variant="subtitle1" style={{
-                                marginRight: "8px",
-                                fontSize: "16px" }}>
-                        อุปกรณ์ที่ใช้
-                      </Typography>
-
-                      <div style={{marginTop: "10px"}}>
-                      <CheckPicker
-                        data={equipmentOptions}
-                        value={selectedEquipment}
-                        onChange={(value) => setSelectedEquipment(value)} // อัปเดตค่าที่เลือก
-                        placeholder="เลือกอุปกรณ์"
-                        style={{ width: 300 }}
-                      />
-                      </div>
-
-                    </div>
-                    {/* ======== Food Select  ======== */}
-                        {/* <div>
-
-                            <div style={{ display: "flex",
-                                        alignItems: "center" ,
-                                        marginLeft: "5px",
-                                        }}>
-                            <div style={{ marginRight: "30px" }}>
-                              <Typography variant="subtitle1" style={{
-                                        marginRight: "8px",
-                                        fontSize: "16px" }}>
-                              เตรียมอาหาร
-                              </Typography>
-
-                              <div style={{marginTop: "9.5px"}}>
-                                <CheckPicker data={data} appearance="default" placeholder="อาหาร" style={{ width: 300 }} />
-                              </div>
-
-                            </div>
-                          </div>
-
-                        </div> */}
-                      {/* ======== Food Select  ======== */}
-                  </div>
-                  {/* ======== Equipment Use Select  ======== */}
-                  {/* ======== Note Use Select  ======== */}
-                  <div style={{ display: "flex", alignItems: "center" , marginTop: "15px"}}>
-                    <div style={{ marginRight: "30px" }}>
-                    <Typography variant="subtitle1" style={{ marginLeft: "5px", fontSize: "16px" }}>
-                      หมายเหตุ
-                    </Typography>
-                      <Input
-                          className="form-control-alternative"
-                          style={{ marginLeft: "5px",marginTop: "10px", width: "300px"}}
-                          placeholder=""
-                          type="textarea"
-                          value={textareaValue}
-                          onChange={(e) => setTextareaValue(e.target.value)}
-                        />
-                    </div>
-                  </div>
-                  {/* ======== Note Use Select  ======== */}
-
                   {/* ======== User  ======== */}
                   <div style= {{display: "flex", marginTop: "10px", marginLeft: "10px"}}>
-                      <Typography variant="subtitle1" style={{
-                                marginRight: "8px",
-                                fontSize: "16px" }}>
-                        ผู้จอง : {username}
-                      </Typography>
-                  </div>
+                    <Typography variant="subtitle1" style={{
+                              marginRight: "8px",
+                              fontSize: "16px" }}>
+                      ผู้จอง : {selectedBooking.User_ID}
+                    </Typography>
+                </div>
                   {/* ======== User  ======== */}
+            </div>
 
-                  {/* ======== Btn Select  ======== */}
-                  <div style={{ display: "flex", alignItems: "center", marginTop: "0px", marginLeft: "5px" }}>
-                  <ButtonToolbar style={{ marginTop: "20px" }}>
-                    <IconButton
-                      appearance="primary"
-                      color="blue"
-                      icon={loading ? <Loader size="sm" /> : <AddOutlineIcon />} // ใช้ไอคอนที่แตกต่างตามสถานะ
-                      onClick={() => {
-                        handlePost();
-                        //sendEmail();
-                      }} // เรียกฟังก์ชัน handlePost
-                      disabled={loading} // ปิดการใช้งานปุ่มระหว่างการโหลด
-                    >
-                      {loading ? "กำลังส่งข้อมูล..." : "ส่งข้อมูล"} {/* ข้อความที่จะแสดงตามสถานะ */}
-                    </IconButton>
-                  </ButtonToolbar>
-                  </div>
-                  {/* ======== Btn Select  ======== */}
-
-                  <Typography variant="body1" color="textSecondary">
-                  </Typography>
-                </CardContent>
-              </BlankCard>
-            </Grid>
-          </Grid>
-        </DashboardCard>
-      </Grid>
-      </Grid >
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} color="primary">ปิด</Button>
+          <Button onClick={() => console.log('Save Changes')} color="secondary">บันทึก</Button>
+        </DialogActions>
+      </Dialog>
     </PageContainer>
   );
 };
 
-export default  meeing_page;
+export default UserReserved;

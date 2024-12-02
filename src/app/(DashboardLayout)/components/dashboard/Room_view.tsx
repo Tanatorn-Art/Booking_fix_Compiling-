@@ -19,6 +19,7 @@ const Bookingrooms = () => {
   const [currentDate, setCurrentDate] = useState<string>('');
   const [currentMeeting, setCurrentMeeting] = useState<BookingRoom | null>(null);
 
+
   // ดึงข้อมูลการจองห้องประชุม
   useEffect(() => {
     const fetchData = async () => {
@@ -33,36 +34,31 @@ const Bookingrooms = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   useEffect(() => {
-    const formatDateWithShortMonth = (isoDate: string) => {
-      const date = new Date(isoDate);
-      const day = String(date.getDate()).padStart(2, '0');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = monthNames[date.getMonth()];
-      const year = date.getFullYear();
-      return `${day} / ${month} / ${year}`;
-    };
-
     const intervalId = setInterval(() => {
       const now = new Date();
+
+      // เวลาและวันที่ปัจจุบัน
       const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setCurrentTime(time);
 
-      const date = formatDateWithShortMonth(now.toISOString());
+      const date = formatDate(now.toISOString());
       setCurrentDate(date);
 
-      // หา meeting ที่กำลังเกิดขึ้น
-      const ongoingMeeting = data.find((booking) => {
-        const startTime = booking.Start_Time;
-        const endTime = booking.End_Time;
+      // กรองการประชุมเฉพาะวันปัจจุบัน
+      const todayMeetings = filterCurrentDateBookings(data);
+
+      // ค้นหาการประชุมที่กำลังเกิดขึ้น
+      const ongoingMeeting = todayMeetings.find((booking) => {
+        const startTime = booking.Start_Time; // เวลาเริ่มต้น เช่น '09:00:00'
+        const endTime = booking.End_Time;     // เวลาสิ้นสุด เช่น '11:00:00'
         return currentTime >= startTime && currentTime <= endTime;
       });
-      setCurrentMeeting(ongoingMeeting || null);
 
+      setCurrentMeeting(ongoingMeeting || null);
     }, 1000);
 
     return () => clearInterval(intervalId);
@@ -76,10 +72,16 @@ const Bookingrooms = () => {
   const formatTime = (time: string) => time.slice(0, 5);
 
   const filterCurrentDateBookings = (bookings: BookingRoom[]) => {
-    const currentDate = new Date();
-    const formattedDate = formatDate(currentDate.toISOString());
+    const today = new Date();
+    const formattedDate = formatDate(today.toISOString()); // รูปแบบวันที่ เช่น "DD/MM/YYYY"
     return bookings.filter((booking) => formatDate(booking.Start_date) === formattedDate);
   };
+  // const filterCurrentDateBookings = (bookings: BookingRoom[]) => {
+  //   const currentDate = new Date();
+  //   const formattedDate = formatDate(currentDate.toISOString());
+  //   return bookings.filter((booking) => formatDate(booking.Start_date) === formattedDate);
+  // };
+
 
   const getTimeDifference = (time1: string, time2: string) => {
     const [hours1, minutes1] = time1.split(':').map(Number);
