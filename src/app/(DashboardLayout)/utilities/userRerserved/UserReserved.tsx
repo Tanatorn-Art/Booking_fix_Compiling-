@@ -44,6 +44,9 @@ const UserReserved = () => {
   //state
   const [data, setData] = useState<BookingRoom[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isloading, setisLoading] = useState(false);
+
+
   const [userID, setUserID] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<BookingRoom | null>(null); // เก็บข้อมูลการจองที่เลือก
   const [currentTime, setCurrentTime] = useState<string>('');
@@ -58,17 +61,65 @@ const UserReserved = () => {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null); // Room ที่เลือก
   const [rooms, setRooms] = useState<{ label: string; value: string }[]>([]); // ข้อมูลห้อง
   const [participantCount, setParticipantCount] = useState<string | null>(null);
+
+  const [notificationType, setNotificationType] = useState<"success" | "error" | "warning" | null>(null);
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null); // สำหรับข้อความแจ้งเตือน
+  const [deleteSuccess, setDeleteSuccess] = useState<boolean | null>(null); // สำหรับสถานะความสำเร็จ
+
   const [confirmationModalOpen, setConfirmationModalOpen] = useState(false); // state สำหรับ Modal
+
+  const [confirmationModalDel, setConfirmationModalDel] = useState(false); // state สำหรับ Modal
+
   const [currentBookingId, setCurrentBookingId] = useState<number | null>(null); // เก็บ Booking_ID ที่เลือก
   const [username, setUsername] = useState<string | null>("");
+
+
   const toaster = useToaster();
   const router = useRouter();
+
   const handleConfirm = () => {
     setLoading(true); // เริ่มโหลด
     if (currentBookingId !== null) {
       router.push(`/utilities/EditReserved?Booking_ID=${currentBookingId}`);
     }
   };
+
+  const handleDelete = async (currentBookingId: any) => {
+    setLoading(true);
+    setNotificationMessage("กำลังลบข้อมูล...");
+    setNotificationType(null); // ลบข้อความแจ้งเตือนเก่าออก
+    setConfirmationModalDel(true); // เปิด Modal ยืนยันการลบ
+
+    try {
+      // ส่งคำขอลบข้อมูลไปยัง API
+      const response = await fetch("/api/deletedata", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ Booking_ID: currentBookingId }), // ส่ง Booking_ID ที่ต้องการลบ
+      });
+
+      if (response.ok) {
+        setNotificationMessage("ลบข้อมูลสำเร็จ!");
+        setNotificationType("success");
+        // อัปเดต UI ตามความต้องการ (เช่น ลบข้อมูลออกจาก state)
+        setData((prevData) => prevData.filter(item => item.Booking_ID !== currentBookingId));
+      } else {
+        const errorData = await response.json();
+        setNotificationMessage(errorData.error || "เกิดข้อผิดพลาดในการลบข้อมูล");
+        setNotificationType("error");
+      }
+    } catch (error) {
+      setNotificationMessage("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      setNotificationType("error");
+    } finally {
+      setLoading(false); // จบโหลด
+    }
+  };
+
+
+
   const handleTimeChange = (value: [Date | null, Date | null] | null) => {
     if (value && value[0] && value[1]) {
       console.log('Selected Time Range:', value);
@@ -259,7 +310,7 @@ const UserReserved = () => {
         { placement: 'topCenter' }
       );
     } finally {
-      setLoading(false); // ปิดการโหลดทุกกรณี
+      setisLoading(false); // ปิดการโหลดทุกกรณี
     }
   };
   const formatTime = (time: string) => time.slice(0, 5);
@@ -274,6 +325,10 @@ const UserReserved = () => {
   const handleEdit = (bookingId: number) => {
     setCurrentBookingId(bookingId); // เก็บ Booking_ID ที่เลือก
     setConfirmationModalOpen(true); // เปิด Modal ยืนยัน
+  };
+  const handleDel = (bookingId: number) => {
+    setCurrentBookingId(bookingId); // เก็บ Booking_ID ที่เลือก
+    setConfirmationModalDel(true); // เปิด Modal ยืนยัน
   };
   // Sorting data based on Start_date
   const sortedData = data.sort((a, b) => {
@@ -336,15 +391,17 @@ const UserReserved = () => {
                     </TableCell>
                     <TableCell align="center">
                       <IconButton
-                        onClick={() => handleEdit(booking.Booking_ID)}
-                        color="primary"
-                        disabled={isPast} // Disable edit button for past bookings
+                        onClick={() => handleEdit(booking.Booking_ID)} color="primary" disabled={isPast} // Disable edit button for past bookings
                       >
                         <EditIcon />
+
                       </IconButton>
-                      <IconButton color="error" disabled={isPast}> {/* Optionally disable delete button */ }
+                      <IconButton
+                        onClick={() => handleDel(booking.Booking_ID)} color="error" disabled={isPast}>
+                        {/* Optionally disable delete button */ }
                         <DeleteIcon />
                       </IconButton>
+
                     </TableCell>
                   </TableRow>
                 );
@@ -358,91 +415,59 @@ const UserReserved = () => {
         </Table>
       </TableContainer>
       {/* Modal */}
-        <Dialog
-          open={confirmationModalOpen}
-          onClose={() => setConfirmationModalOpen(false)}
-          fullWidth
-          maxWidth="xs"
-        >
-          <DialogTitle
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              marginTop: '5px',
-              fontSize: '20px',
-            }}
-          >
-            ยืนยันการแก้ไข
-          </DialogTitle>
-          <DialogContent
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              minHeight: '100px', // เพิ่มพื้นที่ให้ดูสบายตา
-            }}
-          >
+        <Dialog open={confirmationModalOpen} onClose={() => setConfirmationModalOpen(false)} fullWidth maxWidth="xs" >
+          <DialogTitle sx={{ display: 'flex',alignItems: 'center',justifyContent: 'center', textAlign: 'center',marginTop: '5px',fontSize: '20px',}}>
+            ยืนยันการแก้ไข </DialogTitle>
+          <DialogContent sx={{display: 'flex',alignItems: 'center',justifyContent: 'center',textAlign: 'center',minHeight: '100px'}} >
             {loading ? (
-              <HStack
-                spacing={10}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                }}
-              >
+              <HStack spacing={10} style={{ display: 'flex', alignItems: 'center',justifyContent: 'center',textAlign: 'center',}} >
                 <GearIcon spin style={{ fontSize: '2em' }} />
-              </HStack>
-            ) : (
+              </HStack> ) : (
               <Typography
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  marginTop: '5px',
-                  fontSize: '18px',
-                }}
-              >
+                sx={{display: 'flex',alignItems: 'center',justifyContent: 'center',textAlign: 'center',marginTop: '5px',fontSize: '18px',}}>
                 คุณต้องการแก้ไขรายการจองนี้หรือไม่?
               </Typography>
             )}
           </DialogContent>
           <DialogActions
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-            }}
-          >
-            <Button
-              onClick={handleConfirm}
-              color="primary"
-              sx={{
-                fontSize: '18px',
-              }}
-              disabled={loading} // ปิดปุ่มเมื่อกำลังโหลด
-            >
-              ยืนยัน
-            </Button>
-            <Button
-              onClick={() => setConfirmationModalOpen(false)}
-              color="secondary"
-              sx={{
-                fontSize: '18px',
-              }}
-              disabled={loading} // ปิดปุ่มเมื่อกำลังโหลด
-            >
-              ยกเลิก
-            </Button>
+            sx={{display: 'flex',alignItems: 'center',justifyContent: 'center',textAlign: 'center',}}>
+            <Button onClick={handleConfirm} color="primary" sx={{fontSize: '18px',}} disabled={loading}>
+              ยืนยัน </Button>
+            <Button onClick={() => setConfirmationModalOpen(false)} color="secondary" sx={{ fontSize: '18px', }} disabled={loading} >
+              ยกเลิก</Button>
           </DialogActions>
         </Dialog>
-        {/* Modal */}
+
+      {/* Modal Delete Comfirm  */}
+      <Dialog open={confirmationModalDel} onClose={() => {setNotificationMessage("");setNotificationType(null);setConfirmationModalDel(false); }}
+        fullWidth
+        maxWidth="xs">
+        <DialogTitle
+          sx={{display: "flex", alignItems: "center",justifyContent: "center",textAlign: "center", marginTop: "5px", fontSize: "20px", }}>
+          ยืนยันการลบข้อมูล
+        </DialogTitle>
+        <DialogContent
+          sx={{ display: "flex",alignItems: "center", justifyContent: "center",textAlign: "center",minHeight: "20px",}}>
+          <HStack
+            spacing={10}style={{display: "flex",alignItems: "center",justifyContent: "center",textAlign: "center",}}>
+            {loading ? <GearIcon spin style={{ fontSize: "2em", marginRight: "5px" }} /> : null}
+          </HStack>
+          <Typography
+            sx={{marginTop: "10px",fontSize: "16px",color: notificationType === "error" ? "red" : notificationType === "success" ? "green" : "orange",}}>
+            {notificationMessage}
+          </Typography>
+        </DialogContent>
+
+        <DialogActions
+          style={{display: "flex",alignItems: "center",justifyContent: "center",textAlign: "center",}}>
+          {notificationMessage === "ลบข้อมูลสำเร็จ!" ? (
+            <Button
+              onClick={() => { setNotificationMessage(""); setNotificationType(null); setConfirmationModalDel(false); router.push("/utilities/userRerserved");}}
+              color="primary"> OK </Button>) : (<>
+              <Button onClick={async () => {setLoading(true); await handleDelete(currentBookingId);}}color="primary"sx={{fontSize: "18px",}}disabled={loading}> ยืนยัน </Button>
+              <Button onClick={() => {setNotificationMessage("");setNotificationType(null);setConfirmationModalDel(false);}}color="secondary" > ยกเลิก</Button> </>)}
+        </DialogActions>
+      </Dialog>
     </PageContainer>
   );
 };
