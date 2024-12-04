@@ -3,7 +3,6 @@ import React, { useState, useMemo } from "react";
 import "rsuite/dist/rsuite.min.css";
 import { Table, Button, Modal } from "rsuite";
 const { Column, HeaderCell, Cell } = Table;
-
 type EventData = {
   id: string;
   Start_date: string;
@@ -16,25 +15,20 @@ type EventData = {
   participant: number;
   Status_Name: string;
 };
-
 type BookingroomsProps = {
   data: EventData[];
 };
-
 const Bookingrooms = ({ data }: BookingroomsProps) => {
   const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const handleViewDetails = (event: EventData) => {
     setSelectedEvent(event);
     setIsModalOpen(true);
   };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
   };
-
   // กรองข้อมูลที่มีวันที่ตรงกับวันที่ปัจจุบัน
   const today = new Date();
   const filteredData = useMemo(() => {
@@ -106,7 +100,6 @@ const Bookingrooms = ({ data }: BookingroomsProps) => {
           </Cell>
         </Column>
       </Table>
-
       {/* Modal */}
       <Modal open={isModalOpen} onClose={handleCloseModal} size="lg" backdrop="static">
         <Modal.Header>

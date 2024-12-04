@@ -14,8 +14,8 @@ interface RequestBody {
 // Handler for GET requests
 export async function GET() {
   try {
-    // Query to fetch data from the bookingrooms table
-    const [meetingRoomRows] = await mysqlPool.query('SELECT * FROM bookingrooms WHERE Status_Name = ?', ['pending']);
+    // Query to fetch data from the bookingrooms table where Status_Name is either 'pending' or 'Edit'
+    const [meetingRoomRows] = await mysqlPool.query('SELECT * FROM bookingrooms WHERE Status_Name IN (?, ?)', ['pending', 'Edit']);
     console.log('Booking Data:', meetingRoomRows);  // Log data for debugging
 
     // Return the data as JSON
@@ -28,6 +28,7 @@ export async function GET() {
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
 
 // Handler for PUT requests (to update booking status)
 export async function PUT(req: NextRequest, { params }: Params) {

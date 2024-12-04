@@ -1,11 +1,12 @@
 // use server component
 import { fetchEventDetails } from './fetchEventDetails'; // <== server component
-import CalendarDate from './CalendarDate';
-import Bookingrooms from './Bookingrooms';
+import 'rsuite/Button/styles/index.css';
+import dynamic from 'next/dynamic';
+const CalendarDate = dynamic(() => import('./CalendarDate'), { ssr: false, loading: () => <p>Loading CalendarDate...</p> });
+const Bookingrooms = dynamic(() => import('./Bookingrooms'), { ssr: false, loading: () => <p>Loading Bookingrooms...</p> });
 
 export default async function SamplePage() {
   const eventDetails = await fetchEventDetails();
-
   // แปลงข้อมูล eventDetails ให้เป็นรูปแบบที่ CalendarDate ใช้
   const eventsForCalendar = eventDetails.map((event: any) => ({
     start: new Date(event.Start_date),

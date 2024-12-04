@@ -1,7 +1,15 @@
+'use client'
 import React, { useState, useEffect } from 'react';
-import { Typography, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
-import { Link } from 'react-router-dom';
-
+import dynamic from 'next/dynamic';
+// ใช้ dynamic import สำหรับแต่ละ Component
+const Typography = dynamic(() => import('@mui/material/Typography'), { ssr: false, loading: () => <p>Loading Typography...</p> });
+const Table = dynamic(() => import('@mui/material/Table'), { ssr: false, loading: () => <p>Loading Table...</p> });
+const TableHead = dynamic(() => import('@mui/material/TableHead'), { ssr: false, loading: () => <p>Loading TableHead...</p> });
+const TableBody = dynamic(() => import('@mui/material/TableBody'), { ssr: false, loading: () => <p>Loading TableBody...</p> });
+const TableRow = dynamic(() => import('@mui/material/TableRow'), { ssr: false, loading: () => <p>Loading TableRow...</p> });
+const TableCell = dynamic(() => import('@mui/material/TableCell'), { ssr: false, loading: () => <p>Loading TableCell...</p> });
+//ใช้การ import แบบ Dynamic จะทำการโหลดอันที่พร้อมแล้วมาไว้ก่อน ส่วนอันที่ยังช้าอยู่จะตามมาทีหลัง
+//จะได้ไม่ต้องรอโหลดพร้อมกัน
 interface BookingRoom {
   Start_date: string;
   End_date: string;
@@ -11,15 +19,12 @@ interface BookingRoom {
   Event_Name: string;
   Department_Name: string;
 }
-
 const Bookingrooms = () => {
   const [data, setData] = useState<BookingRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   const [currentMeeting, setCurrentMeeting] = useState<BookingRoom | null>(null);
-
-
   // ดึงข้อมูลการจองห้องประชุม
   useEffect(() => {
     const fetchData = async () => {
@@ -36,31 +41,24 @@ const Bookingrooms = () => {
     };
     fetchData();
   }, []);
-
   useEffect(() => {
     const intervalId = setInterval(() => {
       const now = new Date();
-
       // เวลาและวันที่ปัจจุบัน
       const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       setCurrentTime(time);
-
       const date = formatDate(now.toISOString());
       setCurrentDate(date);
-
       // กรองการประชุมเฉพาะวันปัจจุบัน
       const todayMeetings = filterCurrentDateBookings(data);
-
       // ค้นหาการประชุมที่กำลังเกิดขึ้น
       const ongoingMeeting = todayMeetings.find((booking) => {
         const startTime = booking.Start_Time; // เวลาเริ่มต้น เช่น '09:00:00'
         const endTime = booking.End_Time;     // เวลาสิ้นสุด เช่น '11:00:00'
         return currentTime >= startTime && currentTime <= endTime;
       });
-
       setCurrentMeeting(ongoingMeeting || null);
     }, 1000);
-
     return () => clearInterval(intervalId);
   }, [data, currentTime]);
 
@@ -68,7 +66,6 @@ const Bookingrooms = () => {
     const date = new Date(isoDate);
     return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
   };
-
   const formatTime = (time: string) => time.slice(0, 5);
 
   const filterCurrentDateBookings = (bookings: BookingRoom[]) => {
@@ -81,8 +78,6 @@ const Bookingrooms = () => {
   //   const formattedDate = formatDate(currentDate.toISOString());
   //   return bookings.filter((booking) => formatDate(booking.Start_date) === formattedDate);
   // };
-
-
   const getTimeDifference = (time1: string, time2: string) => {
     const [hours1, minutes1] = time1.split(':').map(Number);
     const [hours2, minutes2] = time2.split(':').map(Number);
@@ -100,13 +95,13 @@ const Bookingrooms = () => {
       return currentTimeDifference - nextTimeDifference;
     });
   };
-
   const filteredData = filterCurrentDateBookings(data);
   const sortedData = sortBookingsByTime(filteredData);
 
   if (loading) {
     return <div>Loading...</div>;
   }
+
   return (
     <div style={{ width: '90%', margin: '0 auto', padding: '20px' }}>
       {/* ส่วนหัว */}
@@ -135,33 +130,26 @@ const Bookingrooms = () => {
           </Typography>
         </div>
       </div>
-
       {/* แสดงข้อมูลการประชุมที่กำลังเกิดขึ้น */}
       {currentMeeting && (
         <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#e3f2fd', borderRadius: '8px' }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
             Current Meeting
           </Typography>
-
           <Typography sx={{ color: '#1976d2' }}>
             <strong>Room:</strong> {currentMeeting.Room_Name}
           </Typography>
           <Typography sx={{ color: '#1976d2' }}>
             <strong>Time:</strong> {formatTime(currentMeeting.Start_Time)} - {formatTime(currentMeeting.End_Time)}
           </Typography>
-
-
           <Typography sx={{ color: '#1976d2' }}>
             <strong>Subject:</strong> {currentMeeting.Event_Name}
           </Typography>
-
-
           <Typography sx={{ color: '#1976d2' }}>
             <strong>Department:</strong> {currentMeeting.Department_Name}
           </Typography>
         </div>
       )}
-
       {/* ตารางข้อมูลการจอง */}
       <Table sx={{ border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden', marginTop: '20px' }}>
         <TableHead>
@@ -191,7 +179,6 @@ const Bookingrooms = () => {
           ))}
         </TableBody>
       </Table>
-
       {/* ส่วนท้าย */}
         <a href="/utilities/meeting_room" style={{ textDecoration: 'none' }}>
         <Typography

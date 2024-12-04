@@ -1,11 +1,13 @@
 'use client';
+import dynamic from 'next/dynamic';
+// ไลบรารีที่ใช้ dynamic import
 import { useState, useEffect } from 'react';
-import { Typography, Table, TableHead, TableBody, TableRow, TableCell, TableContainer, Paper, Chip } from '@mui/material';
-import PageContainer from '@/app/(DashboardLayout)/components/dashboard/PageContainer';
-import DashboardCard from '@/app/(DashboardLayout)/components/shared/DashboardCard';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import UserReserved from './UserReserved';
-
+import { Typography} from '@mui/material';
+import SpinnerIcon from '@rsuite/icons/Spinner';
+const PageContainer = dynamic(() => import('@/app/(DashboardLayout)/components/dashboard/PageContainer'), { ssr: false });
+const DashboardCard = dynamic(() => import('@/app/(DashboardLayout)/components/shared/DashboardCard'), { ssr: false });
+import 'bootstrap/dist/css/bootstrap.min.css'; // ไม่จำเป็นต้อง dynamic เนื่องจากเป็นไฟล์ CSS
+const UserReserved = dynamic(() => import('./UserReserved'), { ssr: false });
 interface BookingRoom {
   Start_date: string;
   End_date: string;
@@ -17,11 +19,9 @@ interface BookingRoom {
   participant: number;
   Status_Name: string;
 }
-
 const userRerserved = () => {
   const [data, setData] = useState<BookingRoom[]>([]); // กำหนด Type ให้ state
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -37,15 +37,16 @@ const userRerserved = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
-
-
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <SpinnerIcon spin style={{ fontSize: '2em', marginRight: '10px' }} />
+        <span>Loading...</span>
+      </div>
+    );
   }
-
   return (
     <PageContainer title="Sample Page" description="This is a sample page">
       <DashboardCard title="">

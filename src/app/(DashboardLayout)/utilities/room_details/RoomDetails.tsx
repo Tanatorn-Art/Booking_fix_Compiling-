@@ -1,75 +1,88 @@
 'use client'; // Mark as Client Component
-import { Table, TableHead, TableBody, TableRow, TableCell, TableContainer, Paper, Typography } from '@mui/material';
-import PageContainer from '@/app/(DashboardLayout)/components/dashboard/PageContainer';
-import 'bootstrap/dist/css/bootstrap.min.css';
-
+import dynamic from 'next/dynamic';
+import React, { useState, useEffect } from 'react';
+import { Table} from 'rsuite';
+import 'rsuite/dist/rsuite.min.css';
+const Loader = dynamic(() => import('rsuite').then(mod => mod.Loader), {ssr: false,loading: () => <p>Loading Loader...</p>,});
+// Dynamic import สำหรับ PageContainer
+const PageContainer = dynamic(() => import('@/app/(DashboardLayout)/components/dashboard/PageContainer'),{ssr: false,loading: () => <p>Loading Page Container...</p>,});
 type RoomDetails = {
   Room_ID: number;
   Room_Name: string;
   Capacity: number;
   Location: string;
 };
-
 type RoomProps = {
-  data: RoomDetails[];
+  data: RoomDetails[]; // ข้อมูลเริ่มต้น (ถ้ามี)
 };
 
 const RoomDetails = ({ data }: RoomProps) => {
-  // ตรวจสอบว่า data มีค่าและเป็น array
-  const rooms = Array.isArray(data) ? data : [];
+  const [rooms, setRooms] = useState<RoomDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    setLoading(true);
+    const fetchData = async () => {
+      setTimeout(() => {
+        setRooms(data || []);
+        setLoading(false);
+      }, 1500);
+    };
+    fetchData();
+  }, [data]);
 
   return (
     <PageContainer title="Room Details" description="List of all available rooms">
-      <TableContainer
-        component={Paper}
-        sx={{
+      <div
+        style={{
+          padding: '20px',
+          background: '#fff',
           borderRadius: '8px',
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-          padding: '20px',
           marginTop: '20px',
-          backgroundColor: '#fff',
+          position: 'relative',
         }}
       >
-        <Typography sx={{ fontSize: '20px', marginBottom: '20px' }}>
-          <strong>Rooms Details</strong>
-        </Typography>
-        <Table>
-          <TableHead sx={{ backgroundColor: '#f9f9f9' }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '14px' }}>Room ID</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '14px' }}>Room Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '14px' }}>Capacity</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', fontSize: '14px' }}>Location</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rooms.length > 0 ? (
-              rooms.map((room) => (
-                <TableRow
-                  key={room.Room_ID}
-                  sx={{
-                    backgroundColor: room.Room_ID % 2 === 0 ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    },
-                  }}
-                >
-                  <TableCell sx={{ fontSize: '14px' }}>{room.Room_ID}</TableCell>
-                  <TableCell sx={{ fontSize: '14px' }}>{room.Room_Name}</TableCell>
-                  <TableCell sx={{ fontSize: '14px' }}>{room.Capacity}</TableCell>
-                  <TableCell sx={{ fontSize: '14px' }}>{room.Location}</TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={4} sx={{ textAlign: 'center', fontSize: '14px', color: '#555' }}>
-                  No room details available.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+        <h4 style={{ marginBottom: '20px' }}>Rooms Details</h4>
+        {/* แสดง Loader ขณะกำลังโหลด */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <Loader content="Loading room details..." />
+          </div>
+        ) : (
+          // แสดงตารางเมื่อข้อมูลพร้อม
+          <Table
+            height={400}
+            data={rooms}
+            style={{ border: '1px solid #e5e5e5', borderRadius: '8px' }}
+          >
+            <Table.Column width={100} align="center" fixed>
+              <Table.HeaderCell>Room ID</Table.HeaderCell>
+              <Table.Cell dataKey="Room_ID" />
+            </Table.Column>
+
+            <Table.Column flexGrow={1}>
+              <Table.HeaderCell>Room Name</Table.HeaderCell>
+              <Table.Cell dataKey="Room_Name" />
+            </Table.Column>
+
+            <Table.Column width={120} align="center">
+              <Table.HeaderCell>Capacity</Table.HeaderCell>
+              <Table.Cell dataKey="Capacity" />
+            </Table.Column>
+
+            <Table.Column flexGrow={1}>
+              <Table.HeaderCell>Location</Table.HeaderCell>
+              <Table.Cell dataKey="Location" />
+            </Table.Column>
+          </Table>
+        )}
+        {/* แสดงข้อความเมื่อไม่มีข้อมูล */}
+        {!loading && rooms.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '20px', color: '#555' }}>
+            No room details available.
+          </div>
+        )}
+      </div>
     </PageContainer>
   );
 };
