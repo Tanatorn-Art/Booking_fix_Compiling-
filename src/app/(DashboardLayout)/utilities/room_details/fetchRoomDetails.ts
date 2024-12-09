@@ -11,7 +11,7 @@ export async function fetchRoomDetails() {
     }
     // แปลงข้อมูลที่ได้รับเป็น JSON
     const result = await response.json();
-    console.log('Fetched room details:', result); // Log ข้อมูลที่ได้รับจาก API เพื่อช่วยในการดีบัก
+    //console.log('Fetched room details:', result); // Log ข้อมูลที่ได้รับจาก API เพื่อช่วยในการดีบัก
     // ตรวจสอบว่า `result.meetingRooms` เป็นอาร์เรย์ แล้วคืนค่าข้อมูลที่ต้องการ
     return Array.isArray(result.meetingRooms) ? result.meetingRooms : [];
   } catch (error) {

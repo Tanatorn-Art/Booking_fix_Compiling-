@@ -24,7 +24,7 @@ export async function PUT(request: Request) {
   try {
     // ดึงข้อมูลจาก request body
     const body = await request.json();
-    console.log("Request Body:", body);
+    //console.log("Request Body:", body);
 
     const {
       Booking_ID, // Booking ID ที่ใช้ในการค้นหาข้อมูลที่จะอัปเดต
@@ -125,7 +125,7 @@ export async function PUT(request: Request) {
       Booking_ID, // ใช้ Booking_ID เพื่ออัปเดตข้อมูล
     ]);
 
-    console.log("Database Update Result:", result);
+    //console.log("Database Update Result:", result);
 
     // ตรวจสอบว่าอัปเดตสำเร็จหรือไม่
     if (result.affectedRows === 0) {

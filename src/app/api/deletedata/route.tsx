@@ -5,7 +5,7 @@ export async function DELETE(request: Request) {
   try {
     // ดึงข้อมูลจาก request body
     const body = await request.json();
-    console.log("Request Body:", body);
+    //console.log("Request Body:", body);
 
     const { Booking_ID } = body;
 
@@ -26,7 +26,7 @@ export async function DELETE(request: Request) {
     // ส่งคำสั่ง SQL ไปยังฐานข้อมูล
     const [result]: any = await mysqlPool.query(query, [Booking_ID]);
 
-    console.log("Database Delete Result:", result);
+    //console.log("Database Delete Result:", result);
 
     // ตรวจสอบว่าแถวถูกลบหรือไม่
     if (result.affectedRows === 0) {

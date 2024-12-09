@@ -7,7 +7,7 @@ const RoomDetails = dynamic(() => import('./RoomDetails'), {
 });
 export default async function RoomDetailsPage() {
   const roomsDetails = await fetchRoomDetails();
-  console.log('Rooms Details fetched:', roomsDetails); // เพิ่ม log เพื่อตรวจสอบข้อมูล
+  //console.log('Rooms Details fetched:', roomsDetails); // เพิ่ม log เพื่อตรวจสอบข้อมูล
   return (
     <div>
       <RoomDetails data={roomsDetails} />

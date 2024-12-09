@@ -7,7 +7,7 @@ export async function GET() {
     // Query to fetch data from the meetingroom table
     const [meetingRoomRows] = await mysqlPool.query(
       'SELECT Room_Name, Capacity, Location FROM meetingroom');
-    console.log('Meeting Room Data:', meetingRoomRows);  // Log data for debugging
+    //console.log('Meeting Room Data:', meetingRoomRows);  // Log data for debugging
 
     // Return the data as JSON
     return NextResponse.json({

@@ -7,7 +7,7 @@ export async function GET() {
   try {
     // Query to fetch data from the bookingrooms table
     const [meetingRoomRows] = await mysqlPool.query('SELECT * FROM bookingrooms WHERE Status_Name = ?',['อนุมัติ']);
-    console.log('Booking Data:', meetingRoomRows);  // Log data for debugging
+    //console.log('Booking Data:', meetingRoomRows);  // Log data for debugging
 
     // Return the data as JSON
     return NextResponse.json({

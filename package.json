@@ -1,11 +1,12 @@
 {
-  "name": "modernize-next-free",
+ "name": "modernize-next-free",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@9.8.1",
   "scripts": {
-    "dev": "next dev",
+    "dev": "turbo run dev",
     "fast": "next dev --turbo",
-    "build": "next build",
+    "build": "turbo run build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate"
@@ -53,7 +54,7 @@
     "lodash": "4.17.21",
     "moment": "^2.30.1",
     "mysql2": "^3.11.4",
-    "next": "^14.2.3",
+    "next": "^14.2.20",
     "next-auth": "^4.24.10",
     "next-connect": "^1.0.0",
     "next-intl": "^3.25.1",
@@ -90,6 +91,7 @@
     "@types/react-datepicker": "^6.2.0",
     "@types/react-dom": "^18.3.1",
     "@types/react-table": "^7.7.20",
+    "turbo": "^2.3.3",
     "typescript": "^5.6.3"
   },
   "description": "This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).",

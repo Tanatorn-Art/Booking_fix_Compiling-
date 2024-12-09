@@ -24,7 +24,7 @@ export async function POST(request: Request) {
   try {
     // ดึงข้อมูลจาก request body
     const body = await request.json();
-    console.log("Request Body:", body);
+    //console.log("Request Body:", body);
 
     const {
       Start_date,
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
       departmentName,
     ]);
 
-    console.log("Database Insert Result:", result);
+    //console.log("Database Insert Result:", result);
 
     // ส่งผลลัพธ์กลับไปยัง Frontend
     return NextResponse.json({

@@ -1,6 +1,7 @@
 // fetchEventDetails.ts
 "use server"
 export async function fetchEventDetails() {
+
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_SITE_URL}/api/bookingrooms/`,
     { cache: "no-store" }

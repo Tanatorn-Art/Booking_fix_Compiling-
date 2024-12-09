@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     // ดึงข้อมูลจากตาราง bookingrooms โดยใช้ User_ID
     const [meetingRoomRows] = await mysqlPool.query('SELECT * FROM bookingrooms WHERE User_ID = ?', [userId]);
-    console.log('Booking Data:', meetingRoomRows);  // Log ข้อมูลสำหรับการดีบัก
+    //console.log('Booking Data:', meetingRoomRows);  // Log ข้อมูลสำหรับการดีบัก
 
     // คืนค่าข้อมูลเป็น JSON
     return NextResponse.json({
