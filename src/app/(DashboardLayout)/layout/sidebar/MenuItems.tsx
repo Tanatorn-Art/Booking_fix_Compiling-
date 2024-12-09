@@ -118,7 +118,7 @@ const Menuitems = () => {
     id: uniqueId(),
     title: "Admin",
     icon: IconMedicalCrossCircle,
-    href: "/utilities/adminApprove",
+    href: "/utilities/AdminApprove",
   },
   {
     id: uniqueId(),

@@ -33,7 +33,7 @@ interface BookingDetailsProps {
   bookingId: string;
 }
 
-const adminApprove: React.FC<BookingDetailsProps> = ({ bookingId }) => {
+const AdminApprove: React.FC<BookingDetailsProps> = ({ bookingId }) => {
   const [data, setData] = useState<BookingRoom[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -107,7 +107,6 @@ const adminApprove: React.FC<BookingDetailsProps> = ({ bookingId }) => {
   };
   return (
     <PageContainer title="อนุมัติคำขอ" description="อนุมัติคำขอ">
-      <DashboardCard title="อนุมัติคำขอ">
         <Typography>ห้องประชุม</Typography>
         <TableContainer component={Paper} sx={{ marginTop: 2 }}>
           <Table>
@@ -170,8 +169,7 @@ const adminApprove: React.FC<BookingDetailsProps> = ({ bookingId }) => {
             </TableBody>
           </Table>
         </TableContainer>
-      </DashboardCard>
     </PageContainer>
   );
 };
-export default adminApprove;
+export default AdminApprove;

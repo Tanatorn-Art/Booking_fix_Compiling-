@@ -1,12 +1,12 @@
 {
- "name": "modernize-next-free",
+  "name": "modernize-next-free",
   "version": "0.1.0",
   "private": true,
   "packageManager": "npm@9.8.1",
   "scripts": {
     "dev": "turbo run dev",
     "fast": "next dev --turbo",
-    "build": "turbo run build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate"
