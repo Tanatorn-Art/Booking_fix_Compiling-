@@ -1,16 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { fetchBookingData } from './fetchBookingData';
+import { fetchBookingDataCars } from './fetchBookingDataCars';
 import { TableContainer } from '@mui/material';
 
-interface BookingRoom {
+interface BookingCar {
   Booking_ID: number;
   Start_date: string;
   End_date: string;
   Start_Time: string;
   End_Time: string;
-  Room_Name: string;
+  Car_Name: string;
   Event_Name: string;
   Department_Name: string;
   participant: number;
@@ -27,19 +27,19 @@ const Paper = dynamic(() => import('@mui/material/Paper'), { ssr: false });
 const Button = dynamic(() => import('@mui/material/Button'), { ssr: false });
 const Typography = dynamic(() => import('@mui/material/Typography'), { ssr: false });
 
-interface AdminApproveProps {
-  bookingId: string;
+interface AdminApproveCarProps {
+  bookingIdcar: string;
 }
 
-const AdminApprove: React.FC<AdminApproveProps> = ({ bookingId }) => {
-  const [data, setData] = useState<BookingRoom[]>([]);
+const AdminApproveCar: React.FC<AdminApproveCarProps> = ({ bookingIdcar }) => {
+  const [data, setData] = useState<BookingCar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const bookingData = await fetchBookingData(bookingId);
+        const bookingData = await fetchBookingDataCars(bookingIdcar);
         if (bookingData.length === 0) throw new Error('ไม่มีข้อมูลการจอง');
         setData(bookingData);
       } catch (err: any) {
@@ -50,7 +50,7 @@ const AdminApprove: React.FC<AdminApproveProps> = ({ bookingId }) => {
     };
 
     loadData();
-  }, [bookingId]);
+  }, [bookingIdcar]);
 
   const formatDate = (isoDate: string) => {
     const date = new Date(isoDate);
@@ -64,7 +64,7 @@ const AdminApprove: React.FC<AdminApproveProps> = ({ bookingId }) => {
     const booking = data[index];
 
     try {
-      const response = await fetch(`/api/bookingrooms/${booking.Booking_ID}`, {
+      const response = await fetch(`/api/bookingcars/${booking.Booking_ID}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -95,9 +95,9 @@ const AdminApprove: React.FC<AdminApproveProps> = ({ bookingId }) => {
   }
 
   return (
-    <div>
+    <div style={{marginTop: "35px"}}>
       <Typography variant="h5" gutterBottom sx={{marginBottom: "18px"}}>
-        อนุมัติคำขอจองห้องประชุม
+        อนุมัติคำขอจองยานพาหนะ
       </Typography>
       <TableContainer component={Paper as React.ElementType}>
         <Table>
@@ -116,7 +116,7 @@ const AdminApprove: React.FC<AdminApproveProps> = ({ bookingId }) => {
               <TableRow key={booking.Booking_ID}>
                 <TableCell>{formatDate(booking.Start_date)}</TableCell>
                 <TableCell>{`${booking.Start_Time} - ${booking.End_Time}`}</TableCell>
-                <TableCell>{booking.Room_Name}</TableCell>
+                <TableCell>{booking.Car_Name}</TableCell>
                 <TableCell>{booking.Event_Name}</TableCell>
                 <TableCell>{booking.Status_Name}</TableCell>
                 <TableCell>
@@ -139,4 +139,4 @@ const AdminApprove: React.FC<AdminApproveProps> = ({ bookingId }) => {
   );
 };
 
-export default AdminApprove;
+export default AdminApproveCar;

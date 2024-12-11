@@ -40,7 +40,7 @@ const Button = dynamic(() => import('@mui/material').then(mod => mod.Button), {s
 //ใช้การ import แบบ Dynamic จะทำการโหลดอันที่พร้อมแล้วมาไว้ก่อน ส่วนอันที่ยังช้าอยู่จะตามมาทีหลัง
 //จะได้ไม่ต้องรอโหลดพร้อมกัน
 interface Room {
-  Room_Name: string;
+  Car_Name: string;
   Capacity?: number;
   Location?: string;
 }
@@ -57,21 +57,15 @@ const Meeting: React.FC<BtnServesProps> = ({
   onClick = () => {},
   isLoading = false,
 }) => {
-  const equipmentOptions = [
-    { label: 'เครื่องฉาย Projector', value: 'Projector' },
-    { label: 'Telephone conference', value: 'Telephone conference' },
-    { label: 'VDO Conference', value: 'VDO Conference' },
-    { label: 'เครื่องฉาย VCD/DVD', value: 'VCD/DVD' },
-    { label: 'Computer', value: 'Computer' },
-    { label: 'Visualizer (เครื่องฉายสไลด์)', value: 'Visualizer' },
-  ];
   const [data, setData] = useState<Department[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>(""); // ต้องเป็น string
-  const [selectedDepartmentType, setSelectedDepartmentType] = useState<string>("ภายใน");
+  const [selectedDepartmentType, setSelectedDepartmentType] = useState<string>("ใช้ปกติ");
   const [toppicInput, setToppicInput] = useState("");
   const [participantCount, setParticipantCount] = useState<string | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null); // Room ที่เลือก
-  const [rooms, setRooms] = useState<{ label: string; value: string }[]>([]); // ข้อมูลห้อง
+  const [selectedCar, setSelectedCar] = useState<string | null>(null); //
+
+
+  const [cars, setCars] = useState<{ label: string; value: string }[]>([]);
 
   const [selectedDate, setSelectedDate] = useState<[Date, Date] | null>(null);
   const [selectedTime, setSelectedTime] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
@@ -128,19 +122,19 @@ const Meeting: React.FC<BtnServesProps> = ({
           const storedUsername = localStorage.getItem("username");
           setUsername(storedUsername);
         }
-        const response = await axios.get("/api/rooms");
+        const response = await axios.get("/api/cars");
         console.log("API Response:", response.data);
         const [departmentResponse, roomResponse] = await Promise.all([
           axios.get("/api/department"),
-          axios.get("/api/rooms"),
+          axios.get("/api/cars"),
         ]);
-        console.log('Rooms:', roomResponse.data.rooms); // ตรวจสอบข้อมูลห้อง
+        console.log('Rooms:', roomResponse.data.cars); // ตรวจสอบข้อมูลห้อง
         setData(departmentResponse.data.departments || []);
-        setRooms(roomResponse.data.rooms || []);
-        setRooms(
-          response.data.meetingRooms.map((room: any) => ({
-            label: room.Room_Name, // ใช้ Room_Name เป็น label
-            value: room.Room_Name, // ใช้ Room_Name เป็น value
+        setCars(roomResponse.data.cars || []);
+        setCars(
+          response.data.carreserves.map((car: any) => ({
+            label: car.Car_Name,
+            value: car.Car_Name,
           }))
         );
       } catch (error) {
@@ -151,7 +145,6 @@ const Meeting: React.FC<BtnServesProps> = ({
   }, []);
   const handlePost = async () => {
     const equipmentUseString = JSON.stringify(selectedEquipment);
-    const trimmedEquipmentUseString = equipmentUseString.replace(/[\[\]"]/g, "");
     setLoading(true);
     setConfirmationModalOpen(true);
     try {
@@ -159,7 +152,7 @@ const Meeting: React.FC<BtnServesProps> = ({
       if (
         !toppicInput ||
         !selectedDepartment ||
-        !selectedRoom ||
+        !selectedCar ||
         participantCount === undefined || // ตรวจสอบว่ามีค่า
         participantCount === "" || // ตรวจสอบว่าค่าไม่ว่าง
         isNaN(Number(participantCount)) || // ตรวจสอบว่าค่าเป็นตัวเลข
@@ -188,7 +181,7 @@ const Meeting: React.FC<BtnServesProps> = ({
         const endDateFormatted = endDate.toISOString().split("T")[0];
         const startTimeFormatted = formatTime(startTime);
         const endTimeFormatted = formatTime(endTime);
-
+        //เดี๋ยวมาแก้ตัวแปรทีหลังนะครับ
         const postData = {
           eventName: toppicInput,
           departmentName: selectedDepartment,
@@ -197,16 +190,15 @@ const Meeting: React.FC<BtnServesProps> = ({
           Start_time: startTimeFormatted,
           End_time: endTimeFormatted,
           participant: Number(participantCount),
-          equipmentUse: trimmedEquipmentUseString,
           agency: selectedDepartmentType,
           notes: textareaValue,
           statusName: "Pending",
           userId: username,
-          roomName: selectedRoom,
+          carName: selectedCar,
           approvedByAdminId: "",
         };
       // ส่งข้อมูลไปยัง API
-      const response = await fetch("/api/postdata", {
+      const response = await fetch("/api/postCardata", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -223,7 +215,7 @@ const Meeting: React.FC<BtnServesProps> = ({
           body: JSON.stringify(postData),
         });
         if (emailResponse.ok) {
-          setNotificationMessage("จองห้องประชุมสำเร็จ!");
+          setNotificationMessage("จองยานพาหนะสำเร็จ!");
           setNotificationType("success");
         } else {
           setNotificationMessage("ข้อมูลถูกส่งเรียบร้อย แต่ไม่สามารถส่งอีเมลได้");
@@ -232,7 +224,7 @@ const Meeting: React.FC<BtnServesProps> = ({
       } else {
         const errorData = await response.json();
         if (response.status === 400 && errorData.error === "มีการจองซ้ำในช่วงเวลานี้") {
-          setNotificationMessage("ห้องนี้ถูกจองไว้แล้วในเวลานี้ กรุณาจองใหม่");
+          setNotificationMessage("ยานพาหนะนี้ถูกจองไว้แล้วในเวลานี้ กรุณาจองใหม่");
           setNotificationType("warning");
         } else {
           setNotificationMessage(errorData.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
@@ -272,7 +264,7 @@ const Meeting: React.FC<BtnServesProps> = ({
     <PageContainer title="Typography" description="this is Typography">
       <Grid container spacing={3}>
         <Grid item sm={12} >
-          <DashboardCard title="บันทึกการจองห้องประชุม" >
+          <DashboardCard title="บันทึกการจองยานพาหนะ" >
             <Grid container spacing={3}>
               <Grid item sm={12}>
                 <BlankCard>
@@ -281,12 +273,12 @@ const Meeting: React.FC<BtnServesProps> = ({
                     <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
                       <div style={{ marginRight: "30px" }}>
                         <Typography variant="subtitle1" style={{ marginLeft: "5px", fontSize: "16px" }}>
-                          หัวข้อการประชุม
+                          วัตถุประสงค์การจอง
                         </Typography>
                         <Input
                           className="form-control-alternative"
                           style={{ marginLeft: "5px", marginTop: "10px", width: "710px" }}
-                          placeholder="กรุณากรอกหัวข้อ"
+                          placeholder="กรุณากรอกวัตถุประสงค์"
                           type="text"
                           value={toppicInput} // ผูกค่ากับ state
                           onChange={handleInputChange} // อัปเดตค่าจากการกรอก
@@ -303,7 +295,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                     <div style={{ marginTop: "15px", marginLeft: "5px" }}>
                       <div style={{ marginBottom: "15px" }}>
                         <Typography variant="subtitle1" style={{ fontSize: "16px" }}>
-                          หน่วยงานที่จัดประชุม
+                          หน่วยงานที่จอง
                         </Typography>
                         <div style={{ marginTop: "5px" }}>
                         <SelectPicker
@@ -335,29 +327,29 @@ const Meeting: React.FC<BtnServesProps> = ({
                             value={selectedDepartmentType} // ผูกกับ state
                             onChange={(e) => setSelectedDepartmentType(e.target.value)} // อัปเดต state
                           >
-                            <FormControlLabel value="ภายใน" control={<Radio />} label="ภายใน" />
-                            <FormControlLabel value="ภายนอก" control={<Radio />} label="ภายนอก" />
+                            <FormControlLabel value="ใช้ปกติ" control={<Radio />} label="ใช้ปกติ" />
+                            <FormControlLabel value="ใช้เร่งด่วน" control={<Radio />} label="ใช้เร่งด่วน" />
                           </RadioGroup>
                           </FormControl>
                         </div>
                       </div>
                     </div>
                     {/* ======== Department  ======== */}
-                    {/* ======== Rooms  ======== */}
+                    {/* ======== Cars  ======== */}
                     <div style={{ display: "flex", alignItems: "center", marginLeft: "5px", marginBottom: "25px" }}>
                       {/* ======== ห้องที่ใช้ประชุม ======== */}
                       <div style={{ marginRight: "30px" }}>
                         <Typography variant="subtitle1" style={{ marginRight: "8px", fontSize: "16px" }}>
-                          ห้องที่ใช้ประชุม
+                          ยานพาหนะที่จอง
                         </Typography>
                         <div style={{ marginTop: "5px" }}>
                           <SelectPicker
-                            data={rooms}
+                            data={cars}
                             appearance="default"
-                            placeholder="เลือกห้อง"
+                            placeholder="เลือกยานพาหนะ"
                             style={{ width: '300px'}}
-                            value={selectedRoom}
-                            onChange={(value: string | null) => setSelectedRoom(value)}
+                            value={selectedCar}
+                            onChange={(value: string | null) => setSelectedCar(value)}
                             labelKey="label" // กำหนดให้ใช้ "label" เป็นชื่อห้อง
                             valueKey="value" // กำหนดให้ใช้ "value" เป็นค่าที่ส่งเมื่อเลือก
                           />
@@ -366,7 +358,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                       {/* ======== จำนวนผู้เข้าประชุม ======== */}
                       <div>
                         <Typography variant="subtitle1" style={{ marginLeft: "21px", fontSize: "16px" }}>
-                          จำนวนผู้เข้าประชุม
+                          จำนวนเดินทาง
                         </Typography>
                         <div style={{ marginTop: "4px", marginLeft: "20px" }}>
                           <Stack style={{ width: "100px" }}>
@@ -388,7 +380,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                     {/* วันที่ใช้ห้อง */}
                       <div style={{ marginRight: "30px" }}>
                         <Typography variant="subtitle1" style={{ marginRight: "8px", fontSize: "16px" }}>
-                          วันที่ใช้ห้อง
+                          วันที่ใช้ยานพาหนะ
                         </Typography>
                         <div style={{ marginTop: "5px" }}>
                           <Stack spacing={10} direction="column" alignItems="flex-start">
@@ -418,53 +410,6 @@ const Meeting: React.FC<BtnServesProps> = ({
                           </div>
                         </div>
                     </div>
-                    {/* ======== Date Select  ======== */}
-                    {/* ======== Equipment Use Select  ======== */}
-                    <div style={{ display: "flex",
-                    alignItems: "center" ,
-                    marginLeft: "5px",
-                    marginTop: "20px"}}>
-                      <div style={{ marginRight: "30px" }}>
-                        <Typography variant="subtitle1" style={{
-                                  marginRight: "8px",
-                                  fontSize: "16px" }}>
-                          อุปกรณ์ที่ใช้
-                        </Typography>
-                        <div style={{marginTop: "10px"}}>
-                        <CheckPicker
-                          data={equipmentOptions}
-                          value={selectedEquipment}
-                          onChange={(value) => setSelectedEquipment(value)} // อัปเดตค่าที่เลือก
-                          placeholder="เลือกอุปกรณ์"
-                          style={{ width: 300 }}
-                        />
-                        </div>
-                      </div>
-                      {/* ======== Food Select  ======== */}
-                          {/* <div>
-
-                              <div style={{ display: "flex",
-                                          alignItems: "center" ,
-                                          marginLeft: "5px",
-                                          }}>
-                              <div style={{ marginRight: "30px" }}>
-                                <Typography variant="subtitle1" style={{
-                                          marginRight: "8px",
-                                          fontSize: "16px" }}>
-                                เตรียมอาหาร
-                                </Typography>
-
-                                <div style={{marginTop: "9.5px"}}>
-                                  <CheckPicker data={data} appearance="default" placeholder="อาหาร" style={{ width: 300 }} />
-                                </div>
-
-                              </div>
-                            </div>
-
-                          </div> */}
-                        {/* ======== Food Select  ======== */}
-                    </div>
-                    {/* ======== Equipment Use Select  ======== */}
                     {/* ======== Note Use Select  ======== */}
                     <div style={{ display: "flex", alignItems: "center" , marginTop: "15px"}}>
                       <div style={{ marginRight: "30px" }}>
@@ -528,7 +473,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                           fontSize: '20px',
                         }}
                       >
-                        ยืนยันข้อมูลการจองห้องประชุม
+                        ยืนยันข้อมูลการจองยานพาหนะ
                       </DialogTitle>
                       <DialogContent
                         sx={{
@@ -568,7 +513,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                           textAlign: 'center',
                         }}
                       >
-                        {notificationMessage === "จองห้องประชุมสำเร็จ!" ? (
+                        {notificationMessage === "จองยานพาหนะสำเร็จ!" ? (
                           <Button
                           onClick={() => {
                             setConfirmationModalOpen(false); // ปิด Dialog

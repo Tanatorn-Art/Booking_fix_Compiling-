@@ -4,7 +4,7 @@ export const mysqlPool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'htcbookingroomcar',
+  database: 'bookingroomscars',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 20,
 });

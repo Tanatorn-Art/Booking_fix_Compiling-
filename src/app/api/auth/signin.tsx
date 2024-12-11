@@ -104,7 +104,6 @@ const Login2 = () => {
                 <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }}>
                   Login
                 </Button>
-
                 <Stack
                   direction="row"
                   justifyContent="center"
@@ -130,7 +129,6 @@ const Login2 = () => {
                     Register
                   </Typography>
                 </Stack>
-
               </form>
             </Card>
           </Grid>

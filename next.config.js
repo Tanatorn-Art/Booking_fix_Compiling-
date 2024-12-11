@@ -3,6 +3,13 @@ const nextConfig = {
   reactStrictMode: true,
 };
 
+module.exports = {
+  reactStrictMode: true,
+  experimental: {
+    appDir: true,
+  },
+};
+
 // module.exports = nextConfig;
 // /** @type {import('next').NextConfig} */
 // const nextConfig = {
