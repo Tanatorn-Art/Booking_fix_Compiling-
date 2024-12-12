@@ -3,11 +3,12 @@ import React from "react";
 import { Typography,Table, TableHead, TableBody,
   TableRow, TableCell, TableContainer, Paper,
   IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, Button , TablePagination,
+  DialogContent, DialogActions, Button , TablePagination ,
 } from '@mui/material';
 import dayjs from "dayjs";
 import { useToaster, Notification } from 'rsuite';
-import { Pagination } from 'rsuite';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'rsuite/dist/rsuite.min.css'; // ต้องการสไตล์ของ rsuite
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import 'bootstrap/dist/css/bootstrap.min.css'; // ไม่จำเป็นต้อง dynamic เนื่องจากเป็นไฟล์ CSS
@@ -21,17 +22,17 @@ const HStack = dynamic(() => import('rsuite').then(mod => mod.HStack), { ssr: fa
 const GearIcon = dynamic(() => import('@rsuite/icons/Gear'), { ssr: false });
 //ใช้การ import แบบ Dynamic จะทำการโหลดอันที่พร้อมแล้วมาไว้ก่อน ส่วนอันที่ยังช้าอยู่จะตามมาทีหลัง
 //จะได้ไม่ต้องรอโหลดพร้อมกัน
-interface Room {
-  Room_Name: string;
+interface Car {
+  Car_Name: string;
   Capacity?: number;
   Location?: string;
 }
-interface BookingRoom {
+interface BookingCar {
   Start_date: string;
   End_date: string;
   Start_Time: string;
   End_Time: string;
-  Room_Name: string;
+  Car_Name: string;
   Event_Name: string;
   Department_Name: string;
   participant: string;
@@ -39,14 +40,15 @@ interface BookingRoom {
   Booking_ID: number;
   User_ID: string;
 }
-const UserReserved = () => {
+const UserReservedCars = () => {
   //state
-  const [data, setData] = useState<BookingRoom[]>([]);
+  const [data, setData] = useState<BookingCar[]>([]);
   const [loading, setLoading] = useState(false);
   const [isloading, setisLoading] = useState(false);
 
+
   const [userID, setUserID] = useState<string | null>(null);
-  const [selectedBooking, setSelectedBooking] = useState<BookingRoom | null>(null); // เก็บข้อมูลการจองที่เลือก
+  const [selectedBooking, setSelectedBooking] = useState<BookingCar | null>(null); // เก็บข้อมูลการจองที่เลือก
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>(""); // ต้องเป็น string
@@ -71,18 +73,11 @@ const UserReserved = () => {
   const [currentBookingId, setCurrentBookingId] = useState<number | null>(null); // เก็บ Booking_ID ที่เลือก
   const [username, setUsername] = useState<string | null>("");
 
-  const [activePage, setActivePage] = React.useState(1);
-
+  // เพิ่ม state สำหรับ pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
-  const toaster = useToaster();
-  const router = useRouter();
-
-    const handleChangePage = (
-    event: React.MouseEvent<HTMLButtonElement> | null,
-    newPage: number
-  ) => {
+  const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -91,10 +86,14 @@ const UserReserved = () => {
     setPage(0);
   };
 
+
+  const toaster = useToaster();
+  const router = useRouter();
+
   const handleConfirm = () => {
     setLoading(true); // เริ่มโหลด
     if (currentBookingId !== null) {
-      router.push(`/utilities/EditReserved?Booking_ID=${currentBookingId}`);
+      router.push(`/utilities/EditReservedCars?Booking_ID=${currentBookingId}`);
     }
   };
 
@@ -106,7 +105,7 @@ const UserReserved = () => {
 
     try {
       // ส่งคำขอลบข้อมูลไปยัง API
-      const response = await fetch("/api/deletedata", {
+      const response = await fetch("/api/deletedataCars", {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -185,7 +184,7 @@ const UserReserved = () => {
     if (userID) {
       const fetchData = async () => {
         try {
-          const response = await fetch(`/api/userbooking?User_ID=${userID}`);
+          const response = await fetch(`/api/userbookingCars?User_ID=${userID}`);
           const result = await response.json();
           if (result.success && Array.isArray(result.meetingRooms)) {
             setData(result.meetingRooms);
@@ -361,10 +360,7 @@ const UserReserved = () => {
   }
   return (
     <PageContainer title="User Reservations" description="This is the page displaying user reservations">
-      <div style={{ marginBottom: '10px', fontSize: '18px', color: '#666666' }}>
-        <strong>{currentDate} | {currentTime}</strong><br />
-      </div>
-        <Table>
+        <Table  >
           <TableHead>
             <TableRow>
               <TableCell><strong>วันที่</strong></TableCell>
@@ -378,15 +374,16 @@ const UserReserved = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {data
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((booking, index) => {
+          {sortedData.length > 0 ? (
+              sortedData
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage) // เพิ่ม slice เพื่อแบ่งข้อมูลตามหน้า
+                .map((booking, index) => {
                 const isPast = isPastBooking(booking.Start_date);
                 return (
                   <TableRow key={index} sx={{ backgroundColor: isPast ? '#f0f0f0' : 'transparent' }}>
                     <TableCell>{formatDate(booking.Start_date)} - {formatDate(booking.End_date)}</TableCell>
                     <TableCell>{formatTime(booking.Start_Time)} - {formatTime(booking.End_Time)}</TableCell>
-                    <TableCell>{booking.Room_Name}</TableCell>
+                    <TableCell>{booking.Car_Name}</TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
                       {booking.Event_Name}
                     </TableCell>
@@ -395,29 +392,34 @@ const UserReserved = () => {
                     </TableCell>
                     <TableCell align="center">{booking.participant}</TableCell>
                     <TableCell align="center">
-                    {['Pending', 'Edit'].includes(booking.Status_Name) ? (
+                      {['Pending', 'Edit'].includes(booking.Status_Name) ? (
                         <PieChartIcon style={{ color: '#f5a623', fontSize: '16px' }} />
                       ) : (
                         <PieChartIcon style={{ color: 'green', fontSize: '16px' }} />
                       )}
                     </TableCell>
                     <TableCell align="center">
-                      <IconButton onClick={() => handleEdit(booking.Booking_ID)} color="primary" disabled={isPast}>
+                      <IconButton
+                        onClick={() => handleEdit(booking.Booking_ID)} color="primary" disabled={isPast} // Disable edit button for past bookings
+                      >
                         <EditIcon />
+
                       </IconButton>
-                      <IconButton onClick={() => handleDel(booking.Booking_ID)} color="error" disabled={isPast}>
+                      <IconButton
+                        onClick={() => handleDel(booking.Booking_ID)} color="error" disabled={isPast}>
+                        {/* Optionally disable delete button */ }
                         <DeleteIcon />
                       </IconButton>
+
                     </TableCell>
                   </TableRow>
                 );
-              })}
-            {data.length === 0 && (
+              })
+            ) : (
               <TableRow>
                 <TableCell colSpan={8} align="center">ไม่พบข้อมูลการจอง</TableCell>
               </TableRow>
             )}
-
           </TableBody>
         </Table>
 
@@ -503,4 +505,4 @@ const UserReserved = () => {
   );
 };
 
-export default UserReserved;
+export default UserReservedCars;

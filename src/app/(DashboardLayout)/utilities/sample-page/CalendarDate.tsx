@@ -5,6 +5,9 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import enUS from "date-fns/locale/en-US";
 import moment from "moment";
+import dynamic from 'next/dynamic';
+const PieChartIcon = dynamic(() => import('@rsuite/icons/PieChart'), { ssr: false });
+
 // Localizer setup for react-big-calendar
 const locales = {
   "en-US": enUS,
@@ -90,6 +93,29 @@ export default function CalendarDate({ events }: { events: CalendarEvent[] }) {
         toolbar={false}
         eventPropGetter={eventPropGetter}
       />
+    <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            justifyContent: 'flex-end', // เพิ่มเพื่อให้ชิดขวา
+            marginTop: '16px', // เพิ่มระยะห่างด้านบน
+            marginRight: '16px' // เพิ่มระยะห่างด้านขวา
+          }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <PieChartIcon style={{ color: '#8aa1e3', fontSize: '16px' }} />
+          <span style={{ marginLeft: '4px', color: '#8aa1e3' }}>ผ่านมาแล้ว</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <PieChartIcon style={{ color: 'green', fontSize: '16px' }} />
+          <span style={{ marginLeft: '4px', color: 'green' }}>ปัจจุบัน</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <PieChartIcon style={{ color: '#f5a623', fontSize: '16px' }} />
+          <span style={{ marginLeft: '4px', color: '#f5a623' }}>ล่วงหน้า</span>
+        </div>
+
+      </div>
     </div>
   );
 }

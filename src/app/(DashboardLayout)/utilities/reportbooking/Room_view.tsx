@@ -24,7 +24,37 @@ const Bookingrooms = () => {
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
-  const [currentMeeting, setCurrentMeeting] = useState<BookingRoom | null>(null);
+  const [currentMeetings, setCurrentMeetings] = useState<BookingRoom[]>([]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setCurrentTime(time);
+      const date = formatDate(now.toISOString());
+      setCurrentDate(date);
+
+      // กรองการประชุมเฉพาะวันปัจจุบัน
+      const todayMeetings = filterCurrentDateBookings(data);
+
+      // แก้ไขการค้นหาการประชุมที่กำลังเกิดขึ้น
+      const ongoingMeetings = todayMeetings.filter((booking) => {
+        const currentTimeMinutes = convertTimeToMinutes(currentTime);
+        const startTimeMinutes = convertTimeToMinutes(booking.Start_Time);
+        const endTimeMinutes = convertTimeToMinutes(booking.End_Time);
+
+        return currentTimeMinutes >= startTimeMinutes && currentTimeMinutes <= endTimeMinutes;
+      });
+
+      setCurrentMeetings(ongoingMeetings);
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [data, currentTime]);
+  const convertTimeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
   // ดึงข้อมูลการจองห้องประชุม
   useEffect(() => {
     const fetchData = async () => {
@@ -41,26 +71,7 @@ const Bookingrooms = () => {
     };
     fetchData();
   }, []);
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      const now = new Date();
-      // เวลาและวันที่ปัจจุบัน
-      const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      setCurrentTime(time);
-      const date = formatDate(now.toISOString());
-      setCurrentDate(date);
-      // กรองการประชุมเฉพาะวันปัจจุบัน
-      const todayMeetings = filterCurrentDateBookings(data);
-      // ค้นหาการประชุมที่กำลังเกิดขึ้น
-      const ongoingMeeting = todayMeetings.find((booking) => {
-        const startTime = booking.Start_Time; // เวลาเริ่มต้น เช่น '09:00:00'
-        const endTime = booking.End_Time;     // เวลาสิ้นสุด เช่น '11:00:00'
-        return currentTime >= startTime && currentTime <= endTime;
-      });
-      setCurrentMeeting(ongoingMeeting || null);
-    }, 1000);
-    return () => clearInterval(intervalId);
-  }, [data, currentTime]);
+
 
   const formatDate = (isoDate: string) => {
     const date = new Date(isoDate);
@@ -70,14 +81,27 @@ const Bookingrooms = () => {
 
   const filterCurrentDateBookings = (bookings: BookingRoom[]) => {
     const today = new Date();
-    const formattedDate = formatDate(today.toISOString()); // รูปแบบวันที่ เช่น "DD/MM/YYYY"
-    return bookings.filter((booking) => formatDate(booking.Start_date) === formattedDate);
+    const formattedDate = formatDate(today.toISOString());
+    const currentTime = today.toLocaleTimeString('en-US', { hour12: false }).slice(0, 5);
+
+    return bookings.filter((booking) => {
+      const bookingDate = formatDate(booking.Start_date);
+      // แสดงเฉพาะการจองของวันนี้และเวลาที่ยังไม่ผ่านไป
+      if (bookingDate === formattedDate) {
+        return booking.End_Time >= currentTime ||
+        (booking.Start_Time <= currentTime && booking.End_Time >= currentTime);
+      }
+      return false;
+    });
   };
-  // const filterCurrentDateBookings = (bookings: BookingRoom[]) => {
-  //   const currentDate = new Date();
-  //   const formattedDate = formatDate(currentDate.toISOString());
-  //   return bookings.filter((booking) => formatDate(booking.Start_date) === formattedDate);
-  // };
+
+  const sortBookingsByTime = (bookings: BookingRoom[]) => {
+    return bookings.sort((a, b) => {
+      // เรียงตามเวลาเริ่มต้น
+      return a.Start_Time.localeCompare(b.Start_Time);
+    });
+  };
+
   const getTimeDifference = (time1: string, time2: string) => {
     const [hours1, minutes1] = time1.split(':').map(Number);
     const [hours2, minutes2] = time2.split(':').map(Number);
@@ -88,22 +112,29 @@ const Bookingrooms = () => {
     return date1.getTime() - date2.getTime();
   };
 
-  const sortBookingsByTime = (bookings: BookingRoom[]) => {
-    return bookings.sort((a, b) => {
-      const currentTimeDifference = getTimeDifference(currentTime, a.Start_Time);
-      const nextTimeDifference = getTimeDifference(currentTime, b.Start_Time);
-      return currentTimeDifference - nextTimeDifference;
-    });
-  };
   const filteredData = filterCurrentDateBookings(data);
   const sortedData = sortBookingsByTime(filteredData);
 
   if (loading) {
     return <div>Loading...</div>;
   }
+  const scrollStyles = `
+      @keyframes scrollLeft {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-${12.5}%); } /* ปรับตามจำนวนชุดข้อความ (100/8) */
+      }
+      .scroll-container {
+        display: flex;
+        animation: scrollLeft 10s linear infinite;
+      }
+      .scroll-container:hover {
+        animation-play-state: paused;
+      }
+    `;
 
   return (
     <div style={{ width: '90%', margin: '0 auto', padding: '20px' }}>
+
       {/* ส่วนหัว */}
       <div
         style={{
@@ -130,33 +161,59 @@ const Bookingrooms = () => {
           </Typography>
         </div>
       </div>
+
       {/* แสดงข้อมูลการประชุมที่กำลังเกิดขึ้น */}
-      {currentMeeting && (
-        <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#e3f2fd', borderRadius: '8px' }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-            Current Meeting
-          </Typography>
-          <Typography sx={{ color: '#1976d2' }}>
-            <strong>Room:</strong> {currentMeeting.Room_Name}
-          </Typography>
-          <Typography sx={{ color: '#1976d2' }}>
-            <strong>Time:</strong> {formatTime(currentMeeting.Start_Time)} - {formatTime(currentMeeting.End_Time)}
-          </Typography>
-          <Typography sx={{ color: '#1976d2' }}>
-            <strong>Subject:</strong> {currentMeeting.Event_Name}
-          </Typography>
-          <Typography sx={{ color: '#1976d2' }}>
-            <strong>Department:</strong> {currentMeeting.Department_Name}
-          </Typography>
+      <style jsx global>{scrollStyles}</style>
+      <div >
+        {/* ... Current Meeting ... */}
+        {currentMeetings.length > 0 && (
+        <div style={{
+          marginTop: '20px',
+          padding: '45px',
+          backgroundColor: '#e3f2fd',
+          borderRadius: '8px',
+          overflow: 'hidden'
+        }}>
+          <div className="scroll-container" style={{
+            animation: 'scrollLeft 60s linear infinite',
+            whiteSpace: 'nowrap',
+            width: 'fit-content'
+          }}>
+            {/* สร้างชุดข้อความหลายชุดเพื่อทำ infinite scroll */}
+            {[...Array(8)].map((_, arrayIndex) => ( // เพิ่มจำนวนชุดข้อความเป็น 8 ชุด
+              <Typography
+                key={`text-set-${arrayIndex}`}
+                sx={{
+                  color: '#1976d2',
+                  fontSize: '45px',
+                  display: 'inline-block',
+                  '& strong': {
+                    marginRight: '8px',
+                    marginLeft: '8px'
+                  }
+                }}
+              >
+                {currentMeetings.map((meeting, meetingIndex) => (
+                  <React.Fragment key={`meeting-${arrayIndex}-${meetingIndex}`}>
+                    <strong>[ {meeting.Room_Name} ]</strong>
+                    {meeting.Event_Name}
+                    <strong>[ {formatTime(meeting.Start_Time)}-{formatTime(meeting.End_Time)} ]</strong>
+                    <span style={{ margin: '0 20px' }}>•</span> {/* เพิ่มตัวคั่นระหว่างรายการ */}
+                  </React.Fragment>
+                ))}
+              </Typography>
+            ))}
+          </div>
         </div>
       )}
+
       {/* ตารางข้อมูลการจอง */}
       <Table sx={{ border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden', marginTop: '20px' }}>
         <TableHead>
           <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
             <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>Room</TableCell>
             <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>Time</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>Subject</TableCell>
+            <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '450px' }}>Subject</TableCell>
             <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>Department</TableCell>
           </TableRow>
         </TableHead>
@@ -173,7 +230,7 @@ const Bookingrooms = () => {
               <TableCell sx={{ textAlign: 'center' }}>
                 {formatTime(booking.Start_Time)} - {formatTime(booking.End_Time)}
               </TableCell>
-              <TableCell sx={{ textAlign: 'center' }}>{booking.Event_Name}</TableCell>
+              <TableCell sx={{}}>{booking.Event_Name}</TableCell>
               <TableCell sx={{ textAlign: 'center' }}>{booking.Department_Name}</TableCell>
             </TableRow>
           ))}
@@ -196,6 +253,7 @@ const Bookingrooms = () => {
          - Reserve your meeting room -
         </Typography>
       </a>
+    </div>
     </div>
   );
 };

@@ -8,6 +8,7 @@ const PageContainer = dynamic(() => import('@/app/(DashboardLayout)/components/d
 const DashboardCard = dynamic(() => import('@/app/(DashboardLayout)/components/shared/DashboardCard'), { ssr: false });
 import 'bootstrap/dist/css/bootstrap.min.css'; // ไม่จำเป็นต้อง dynamic เนื่องจากเป็นไฟล์ CSS
 const UserReserved = dynamic(() => import('./UserReserved'), { ssr: false });
+const UserReservedCars = dynamic(() => import('./UserReservedCars'), { ssr: false });
 interface BookingRoom {
   Start_date: string;
   End_date: string;
@@ -50,13 +51,25 @@ const userRerserved = () => {
   return (
     <PageContainer title="Sample Page" description="This is a sample page">
       <DashboardCard title="">
-        <Typography variant="h3" sx={{ marginTop: 2, marginLeft: 0 }}>
-        Booking History
-        </Typography>
-        {/* รายการอื่น ๆ */}
-        <br></br>
-        {/* ตารางแสดงข้อมูล */}
-        <UserReserved/>
+        <div>
+          <Typography variant="h3" sx={{marginLeft: 0, color: '#2196f3' }}>
+            Booking History ( Room )
+          </Typography>
+          <br />
+          <UserReserved />
+          <br />
+        </div>
+      </DashboardCard>
+      <br />
+      <DashboardCard title="">
+        <div>
+          <Typography variant="h3" sx={{  marginLeft: 0, color: '#2196f3' }}>
+            Booking History ( Car )
+          </Typography>
+          <br />
+          <UserReservedCars />
+          <br />
+        </div>
       </DashboardCard>
     </PageContainer>
   );

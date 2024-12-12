@@ -40,7 +40,7 @@ const AdminApproveCar: React.FC<AdminApproveCarProps> = ({ bookingIdcar }) => {
     const loadData = async () => {
       try {
         const bookingData = await fetchBookingDataCars(bookingIdcar);
-        if (bookingData.length === 0) throw new Error('ไม่มีข้อมูลการจอง');
+        if (bookingData.length === 0) throw new Error('ไม่มีข้อมูลการจองยานพาหนะ');
         setData(bookingData);
       } catch (err: any) {
         setError(err.message || 'เกิดข้อผิดพลาด');

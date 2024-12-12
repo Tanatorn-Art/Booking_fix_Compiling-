@@ -136,6 +136,52 @@ const Edit: React.FC<BtnServesProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setToppicInput(e.target.value);
   };
+  // เพิ่ม useEffect สำหรับดึงข้อมูลการจอง
+  useEffect(() => {
+    const fetchBookingData = async () => {
+      if (bookingID) {
+        try {
+          const response = await fetch(`/api/bookingrooms/${bookingID}`);
+          if (response.ok) {
+            const data = await response.json();
+            // นำข้อมูลมาเซ็ตใน state
+            setToppicInput(data.Event_Name);
+            setSelectedDepartment(data.Department_Name);
+            setSelectedDepartmentType(data.Agency);
+            setSelectedRoom(data.Room_Name);
+            setParticipantCount(data.Participant.toString());
+
+            // เพิ่มการเซ็ตค่าอุปกรณ์
+            if (data.Equipment_Use) {
+              const equipments = data.Equipment_Use.split(',').map((item: string) => item.trim());
+              setSelectedEquipment(equipments);
+            }
+
+            // แปลงวันที่
+            const startDate = new Date(data.Start_date);
+            const endDate = new Date(data.End_date);
+            setSelectedDate([startDate, endDate]);
+
+            // แปลงเวลา
+            const startTime = new Date();
+            startTime.setHours(parseInt(data.Start_Time.split(':')[0]));
+            startTime.setMinutes(parseInt(data.Start_Time.split(':')[1]));
+
+            const endTime = new Date();
+            endTime.setHours(parseInt(data.End_Time.split(':')[0]));
+            endTime.setMinutes(parseInt(data.End_Time.split(':')[1]));
+
+            setSelectedTime({ start: startTime, end: endTime });
+            setTextareaValue(data.Notes || '');
+          }
+        } catch (error) {
+          console.error('Error fetching booking data:', error);
+        }
+      }
+    };
+
+    fetchBookingData();
+  }, [bookingID]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -355,24 +401,23 @@ const Edit: React.FC<BtnServesProps> = ({
                       <div style={{ marginTop: "5px" }}>
 
                       <SelectPicker
-                          data={
-                            data.length > 0
-                              ? data.map((department) => ({
-                                  label: department.Department_Name,
-                                  value: department.Department_Name,
-                                }))
-                              : []
+                        data={data.length > 0
+                          ? data.map((department) => ({
+                              label: department.Department_Name,
+                              value: department.Department_Name,
+                            }))
+                          : []}
+                        appearance="default"
+                        placeholder="เลือกหน่วยงาน"
+                        style={{ width: 300 }}
+                        value={selectedDepartment}
+                        onChange={(value, event) => {
+                          if (value) {
+                            console.log("Selected Department:", value);
+                            setSelectedDepartment(value as string);
                           }
-                          appearance="default"
-                          placeholder="เลือกหน่วยงาน"
-                          style={{ width: 300 }}
-                          onChange={(value: string | null) => {
-                            if (value) {
-                              console.log("Selected Department:", value); // Debugging
-                              setSelectedDepartment(value);
-                            }
-                          }}
-                        />
+                        }}
+                      />
 
                       </div>
 
@@ -407,9 +452,9 @@ const Edit: React.FC<BtnServesProps> = ({
                           placeholder="เลือกห้อง"
                           style={{ width: '300px'}}
                           value={selectedRoom}
-                          onChange={(value: string | null) => setSelectedRoom(value)}
-                          labelKey="label" // กำหนดให้ใช้ "label" เป็นชื่อห้อง
-                          valueKey="value" // กำหนดให้ใช้ "value" เป็นค่าที่ส่งเมื่อเลือก
+                          onChange={(value, event) => setSelectedRoom(value as string | null)}
+                          labelKey="label"
+                          valueKey="value"
                         />
                       </div>
                     </div>
@@ -487,43 +532,20 @@ const Edit: React.FC<BtnServesProps> = ({
                       <CheckPicker
                         data={equipmentOptions}
                         value={selectedEquipment}
-                        onChange={(value) => setSelectedEquipment(value)} // อัปเดตค่าที่เลือก
+                        onChange={(value, event) => setSelectedEquipment(value as string[])}
                         placeholder="เลือกอุปกรณ์"
                         style={{ width: 300 }}
                       />
                       </div>
 
                     </div>
-                    {/* ======== Food Select  ======== */}
-                        {/* <div>
-
-                            <div style={{ display: "flex",
-                                        alignItems: "center" ,
-                                        marginLeft: "5px",
-                                        }}>
-                            <div style={{ marginRight: "30px" }}>
-                              <Typography variant="subtitle1" style={{
-                                        marginRight: "8px",
-                                        fontSize: "16px" }}>
-                              เตรียมอาหาร
-                              </Typography>
-
-                              <div style={{marginTop: "9.5px"}}>
-                                <CheckPicker data={data} appearance="default" placeholder="อาหาร" style={{ width: 300 }} />
-                              </div>
-
-                            </div>
-                          </div>
-
-                        </div> */}
-                      {/* ======== Food Select  ======== */}
                   </div>
                   {/* ======== Equipment Use Select  ======== */}
                   {/* ======== Note Use Select  ======== */}
                   <div style={{ display: "flex", alignItems: "center" , marginTop: "15px"}}>
                     <div style={{ marginRight: "30px" }}>
                     <Typography variant="subtitle1" style={{ marginLeft: "5px", fontSize: "16px" }}>
-                      หมายเหตุ
+                      หมายเหุ
                     </Typography>
                       <Input
                           className="form-control-alternative"
@@ -662,7 +684,6 @@ const Edit: React.FC<BtnServesProps> = ({
                     </DialogActions>
                   </Dialog>
                   {/* ======== Confirmation Dialog  ======== */}
-
                   <Typography variant="body1" color="textSecondary">
                   </Typography>
                 </CardContent>

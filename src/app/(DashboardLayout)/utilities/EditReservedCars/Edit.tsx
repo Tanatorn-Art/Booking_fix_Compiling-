@@ -3,13 +3,13 @@ import dynamic from 'next/dynamic';
 import React , { useEffect} from "react";
 import { useState } from 'react';
 import {FormControl,} from '@mui/material';
-import { useRouter } from 'next/navigation';
 import axios from "axios";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'rsuite/dist/rsuite.min.css'; // ต้องการสไตล์ของ rsuite
 import dayjs from "dayjs";
 // Loading Component
 const Loading = ({ moduleName }: { moduleName: string }) => (<p>Loading {moduleName}...</p>);
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 // Dynamic Imports พร้อมระบุชื่อโมดูลใน Loading
 const Typography = dynamic(() => import('@mui/material').then(mod => mod.Typography), {ssr: false,loading: () => <Loading moduleName="Typography" />});
 const Grid = dynamic(() => import('@mui/material').then(mod => mod.Grid), {ssr: false,loading: () => <Loading moduleName="Grid" />});
@@ -40,7 +40,7 @@ const Button = dynamic(() => import('@mui/material').then(mod => mod.Button), {s
 //ใช้การ import แบบ Dynamic จะทำการโหลดอันที่พร้อมแล้วมาไว้ก่อน ส่วนอันที่ยังช้าอยู่จะตามมาทีหลัง
 //จะได้ไม่ต้องรอโหลดพร้อมกัน
 interface Room {
-  Room_Name: string;
+  Car_Name: string;
   Capacity?: number;
   Location?: string;
 }
@@ -49,7 +49,7 @@ interface Department {
 }
 interface BtnServesProps {
   label?: string; // ข้อความในปุ่ม
-  onClick?: () => void; // ฟังก์ชันที่จะถูกเรียกเมื่อคลิกปุ่ม
+  onClick?: () => void; // ฟังก์ชันที่จะถูกเรียกเมื่อคลิปุ่ม
   isLoading?: boolean; // สถานะเริ่มต้นของการโหลด
 }
 const Meeting: React.FC<BtnServesProps> = ({
@@ -57,21 +57,15 @@ const Meeting: React.FC<BtnServesProps> = ({
   onClick = () => {},
   isLoading = false,
 }) => {
-  const equipmentOptions = [
-    { label: 'เครื่องฉาย Projector', value: 'Projector' },
-    { label: 'Telephone conference', value: 'Telephone conference' },
-    { label: 'VDO Conference', value: 'VDO Conference' },
-    { label: 'เครื่องฉาย VCD/DVD', value: 'VCD/DVD' },
-    { label: 'Computer', value: 'Computer' },
-    { label: 'Visualizer (เครื่องฉายสไลด์)', value: 'Visualizer' },
-  ];
   const [data, setData] = useState<Department[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>(""); // ต้องเป็น string
-  const [selectedDepartmentType, setSelectedDepartmentType] = useState<string>("ภายใน");
+  const [selectedDepartmentType, setSelectedDepartmentType] = useState<string>("ใช้ปกติ");
   const [toppicInput, setToppicInput] = useState("");
   const [participantCount, setParticipantCount] = useState<string | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null); // Room ที่เลือก
-  const [rooms, setRooms] = useState<{ label: string; value: string }[]>([]); // ข้อมูลห้อง
+  const [selectedCar, setSelectedCar] = useState<string | null>(null); //
+
+
+  const [cars, setCars] = useState<{ label: string; value: string }[]>([]);
 
   const [selectedDate, setSelectedDate] = useState<[Date, Date] | null>(null);
   const [selectedTime, setSelectedTime] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
@@ -93,7 +87,14 @@ const Meeting: React.FC<BtnServesProps> = ({
       setSelectedTime({ start: null, end: null });
     }
   };
+  const pathname = usePathname(); // ใช้ usePathname เพื่อดึง path ปัจจุบัน
+  const searchParams = useSearchParams(); // ใช้ useSearchParams เพื่อดึง search params
   const router = useRouter(); // ใช้ useRouter
+  const bookingID = searchParams ? searchParams.get('Booking_ID') : null;
+
+  if (!bookingID) {
+    return <div>กำลังโหลด...</div>; // ถ้า Booking_ID ยังไม่ถูกตั้งค่า
+  }
 
   const handleDateChange = (value: any) => {
     if (value) {
@@ -128,19 +129,19 @@ const Meeting: React.FC<BtnServesProps> = ({
           const storedUsername = localStorage.getItem("username");
           setUsername(storedUsername);
         }
-        const response = await axios.get("/api/rooms");
+        const response = await axios.get("/api/cars");
         console.log("API Response:", response.data);
         const [departmentResponse, roomResponse] = await Promise.all([
           axios.get("/api/department"),
-          axios.get("/api/rooms"),
+          axios.get("/api/cars"),
         ]);
-        console.log('Rooms:', roomResponse.data.rooms); // ตรวจสอบข้อมูลห้อง
+        console.log('Rooms:', roomResponse.data.cars); // ตรวจสอบข้อมูลห้อง
         setData(departmentResponse.data.departments || []);
-        setRooms(roomResponse.data.rooms || []);
-        setRooms(
-          response.data.meetingRooms.map((room: any) => ({
-            label: room.Room_Name, // ใช้ Room_Name เป็น label
-            value: room.Room_Name, // ใช้ Room_Name เป็น value
+        setCars(roomResponse.data.cars || []);
+        setCars(
+          response.data.carreserves.map((car: any) => ({
+            label: car.Car_Name,
+            value: car.Car_Name,
           }))
         );
       } catch (error) {
@@ -151,7 +152,6 @@ const Meeting: React.FC<BtnServesProps> = ({
   }, []);
   const handlePost = async () => {
     const equipmentUseString = JSON.stringify(selectedEquipment);
-    const trimmedEquipmentUseString = equipmentUseString.replace(/[\[\]"]/g, "");
     setLoading(true);
     setConfirmationModalOpen(true);
     try {
@@ -159,7 +159,7 @@ const Meeting: React.FC<BtnServesProps> = ({
       if (
         !toppicInput ||
         !selectedDepartment ||
-        !selectedRoom ||
+        !selectedCar ||
         participantCount === undefined || // ตรวจสอบว่ามีค่า
         participantCount === "" || // ตรวจสอบว่าค่าไม่ว่าง
         isNaN(Number(participantCount)) || // ตรวจสอบว่าค่าเป็นตัวเลข
@@ -168,7 +168,8 @@ const Meeting: React.FC<BtnServesProps> = ({
         !selectedDate[1] || // ตรวจสอบว่ามีวันที่สิ้นสุด
         !selectedTime.start ||
         !selectedTime.end ||
-        !username
+        !username ||
+        !bookingID
       ) {
         setNotificationMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
         setNotificationType("error");
@@ -176,7 +177,7 @@ const Meeting: React.FC<BtnServesProps> = ({
         return;
       }
         setLoading(true);
-        setNotificationMessage("กำลังทำการจอง...");
+        setNotificationMessage("กำลังทำการแก้ไข...");
         setNotificationType(null); // ลบข้อความแจ้งเตือนเก่าออก
 
         const startDate = new Date(selectedDate[0]);
@@ -189,7 +190,8 @@ const Meeting: React.FC<BtnServesProps> = ({
         const startTimeFormatted = formatTime(startTime);
         const endTimeFormatted = formatTime(endTime);
 
-        const postData = {
+        const putData = {
+          Booking_ID: bookingID,
           eventName: toppicInput,
           departmentName: selectedDepartment,
           Start_date: startDateFormatted,
@@ -197,21 +199,20 @@ const Meeting: React.FC<BtnServesProps> = ({
           Start_time: startTimeFormatted,
           End_time: endTimeFormatted,
           participant: Number(participantCount),
-          equipmentUse: trimmedEquipmentUseString,
           agency: selectedDepartmentType,
           notes: textareaValue,
-          statusName: "Pending",
+          statusName: "Edit",
           userId: username,
-          roomName: selectedRoom,
+          carName: selectedCar,
           approvedByAdminId: "",
         };
       // ส่งข้อมูลไปยัง API
-      const response = await fetch("/api/postdata", {
-        method: "POST",
+      const response = await fetch("/api/putCardata", {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(postData),
+        body: JSON.stringify(putData),
       });
       if (response.ok) {
         // ส่งอีเมลหลังจากข้อมูลถูกบันทึก
@@ -220,10 +221,10 @@ const Meeting: React.FC<BtnServesProps> = ({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(postData),
+          body: JSON.stringify(putData),
         });
         if (emailResponse.ok) {
-          setNotificationMessage("จองห้องประชุมสำเร็จ!");
+          setNotificationMessage("แก้ไขยานพาหนะสำเร็จ!");
           setNotificationType("success");
         } else {
           setNotificationMessage("ข้อมูลถูกส่งเรียบร้อย แต่ไม่สามารถส่งอีเมลได้");
@@ -232,7 +233,7 @@ const Meeting: React.FC<BtnServesProps> = ({
       } else {
         const errorData = await response.json();
         if (response.status === 400 && errorData.error === "มีการจองซ้ำในช่วงเวลานี้") {
-          setNotificationMessage("ห้องนี้ถูกจองไว้แล้วในเวลานี้ กรุณาจองใหม่");
+          setNotificationMessage("ยานพาหนะนี้ถูกจองไว้แล้วในเลานี้ กรุณาแก้ไขใหม่");
           setNotificationType("warning");
         } else {
           setNotificationMessage(errorData.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล");
@@ -268,32 +269,76 @@ const Meeting: React.FC<BtnServesProps> = ({
     }, 3000); // จำลองเวลาการส่งข้อมูล 3 วินาที
   };
 
+  // เพิ่ม useEffect สำหรับดึงข้อมูลการจอง
+  useEffect(() => {
+    const fetchBookingData = async () => {
+      if (bookingID) {
+        try {
+          const response = await fetch(`/api/bookingcars/${bookingID}`);
+          if (response.ok) {
+            const data = await response.json();
+            // นำข้อมูลมาเซ็ตใน state
+            setToppicInput(data.Event_Name);
+            setSelectedDepartment(data.Department_Name);
+            setSelectedDepartmentType(data.Agency);
+            setSelectedCar(data.Car_Name);
+            setParticipantCount(data.Participant.toString());
+
+            // แปลงวันที่
+            const startDate = new Date(data.Start_date);
+            const endDate = new Date(data.End_date);
+            setSelectedDate([startDate, endDate]);
+
+            // แปลงเวลา
+            const startTime = new Date();
+            startTime.setHours(parseInt(data.Start_Time.split(':')[0]));
+            startTime.setMinutes(parseInt(data.Start_Time.split(':')[1]));
+
+            const endTime = new Date();
+            endTime.setHours(parseInt(data.End_Time.split(':')[0]));
+            endTime.setMinutes(parseInt(data.End_Time.split(':')[1]));
+
+            setSelectedTime({ start: startTime, end: endTime });
+            setTextareaValue(data.Notes || '');
+          }
+        } catch (error) {
+          console.error('Error fetching booking data:', error);
+        }
+      }
+    };
+
+    fetchBookingData();
+  }, [bookingID]);
+
   return (
     <PageContainer title="Typography" description="this is Typography">
       <Grid container spacing={3}>
         <Grid item sm={12} >
-          <DashboardCard title="บันทึกการจองห้องประชุม" >
+          <DashboardCard title="*แก้ไข* การจองยานพาหนะ" >
             <Grid container spacing={3}>
               <Grid item sm={12}>
                 <BlankCard>
                   <CardContent>
+                  <Typography variant="subtitle1" style={{ marginLeft: "5px", fontSize: "16px" }}>
+                        Booking ID : {bookingID}
+                      </Typography>
                     {/* ======== Topic ======== */}
                     <div style={{ display: "flex", alignItems: "center", marginBottom: "20px" }}>
                       <div style={{ marginRight: "30px" }}>
                         <Typography variant="subtitle1" style={{ marginLeft: "5px", fontSize: "16px" }}>
-                          หัวข้อการประชุม
+                          วัตถุประสงค์การจอง *แก้ไข*
                         </Typography>
                         <Input
                           className="form-control-alternative"
                           style={{ marginLeft: "5px", marginTop: "10px", width: "710px" }}
-                          placeholder="กรุณากรอกหัวข้อ"
+                          placeholder="กรุณากรอกวัตถุประสงค์"
                           type="text"
                           value={toppicInput} // ผูกค่ากับ state
                           onChange={handleInputChange} // อัปเดตค่าจากการกรอก
                         />
                         {loading && (
                           <div style={{ marginTop: "10px" }}>
-                            กำลังทำการจอง...
+                            กำลังทำการแก้ไข...
                           </div>
                         )}
                       </div>
@@ -303,7 +348,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                     <div style={{ marginTop: "15px", marginLeft: "5px" }}>
                       <div style={{ marginBottom: "15px" }}>
                         <Typography variant="subtitle1" style={{ fontSize: "16px" }}>
-                          หน่วยงานที่จัดประชุม
+                          หน่วยงานที่จอง
                         </Typography>
                         <div style={{ marginTop: "5px" }}>
                         <SelectPicker
@@ -333,29 +378,29 @@ const Meeting: React.FC<BtnServesProps> = ({
                             value={selectedDepartmentType} // ผูกกับ state
                             onChange={(e) => setSelectedDepartmentType(e.target.value)} // อัปเดต state
                           >
-                            <FormControlLabel value="ภายใน" control={<Radio />} label="ภายใน" />
-                            <FormControlLabel value="ภายนอก" control={<Radio />} label="ภายนอก" />
+                            <FormControlLabel value="ใช้ปกติ" control={<Radio />} label="ใช้ปกติ" />
+                            <FormControlLabel value="ใช้เร่งด่วน" control={<Radio />} label="ใช้เร่งด่วน" />
                           </RadioGroup>
                           </FormControl>
                         </div>
                       </div>
                     </div>
                     {/* ======== Department  ======== */}
-                    {/* ======== Rooms  ======== */}
+                    {/* ======== Cars  ======== */}
                     <div style={{ display: "flex", alignItems: "center", marginLeft: "5px", marginBottom: "25px" }}>
                       {/* ======== ห้องที่ใช้ประชุม ======== */}
                       <div style={{ marginRight: "30px" }}>
                         <Typography variant="subtitle1" style={{ marginRight: "8px", fontSize: "16px" }}>
-                          ห้องที่ใช้ประชุม
+                          ยานพาหนะที่จอง
                         </Typography>
                         <div style={{ marginTop: "5px" }}>
                           <SelectPicker
-                            data={rooms}
+                            data={cars}
                             appearance="default"
-                            placeholder="เลือกห้อง"
+                            placeholder="เลือกยานพาหนะ"
                             style={{ width: '300px'}}
-                            value={selectedRoom}
-                            onChange={(value, event) => setSelectedRoom(value as string | null)}
+                            value={selectedCar}
+                            onChange={(value, event) => setSelectedCar(value as string | null)}
                             labelKey="label"
                             valueKey="value"
                           />
@@ -364,7 +409,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                       {/* ======== จำนวนผู้เข้าประชุม ======== */}
                       <div>
                         <Typography variant="subtitle1" style={{ marginLeft: "21px", fontSize: "16px" }}>
-                          จำนวนผู้เข้าประชุม
+                          จำนวนเดินทาง
                         </Typography>
                         <div style={{ marginTop: "4px", marginLeft: "20px" }}>
                           <Stack style={{ width: "100px" }}>
@@ -386,7 +431,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                     {/* วันที่ใช้ห้อง */}
                       <div style={{ marginRight: "30px" }}>
                         <Typography variant="subtitle1" style={{ marginRight: "8px", fontSize: "16px" }}>
-                          วันที่ใช้ห้อง
+                          วันที่ใช้ยานพาหนะ
                         </Typography>
                         <div style={{ marginTop: "5px" }}>
                           <Stack spacing={10} direction="column" alignItems="flex-start">
@@ -416,30 +461,6 @@ const Meeting: React.FC<BtnServesProps> = ({
                           </div>
                         </div>
                     </div>
-                    {/* ======== Date Select  ======== */}
-                    {/* ======== Equipment Use Select  ======== */}
-                    <div style={{ display: "flex",
-                    alignItems: "center" ,
-                    marginLeft: "5px",
-                    marginTop: "20px"}}>
-                      <div style={{ marginRight: "30px" }}>
-                        <Typography variant="subtitle1" style={{
-                                  marginRight: "8px",
-                                  fontSize: "16px" }}>
-                          อุปกรณ์ที่ใช้
-                        </Typography>
-                        <div style={{marginTop: "10px"}}>
-                        <CheckPicker
-                          data={equipmentOptions}
-                          value={selectedEquipment}
-                          onChange={(value, event) => setSelectedEquipment(value as string[])}
-                          placeholder="เลือกอุปกรณ์"
-                          style={{ width: 300 }}
-                        />
-                        </div>
-                      </div>
-                    </div>
-                    {/* ======== Equipment Use Select  ======== */}
                     {/* ======== Note Use Select  ======== */}
                     <div style={{ display: "flex", alignItems: "center" , marginTop: "15px"}}>
                       <div style={{ marginRight: "30px" }}>
@@ -476,7 +497,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                           onClick={() => setConfirmationModalOpen(true)} // เปิด Dialog เมื่อคลิกปุ่ม
                           disabled={loading}
                         >
-                          {loading ? "กำลังทำการจอง..." : "ยืนยันข้อมูล"}
+                          {loading ? "กำลังทำการแก้ไข..." : "ยืนยันข้อมูล"}
                         </IconButton>
                       </ButtonToolbar>
                     </div>
@@ -503,7 +524,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                           fontSize: '20px',
                         }}
                       >
-                        ยืนยันข้อมูลการจองห้องประชุม
+                        ยืนยันข้อมูลการแก้ไขยานพาหนะ
                       </DialogTitle>
                       <DialogContent
                         sx={{
@@ -543,11 +564,11 @@ const Meeting: React.FC<BtnServesProps> = ({
                           textAlign: 'center',
                         }}
                       >
-                        {notificationMessage === "จองห้องประชุมสำเร็จ!" ? (
+                        {notificationMessage === "แก้ไขยานพาหนะสำเร็จ!" ? (
                           <Button
                           onClick={() => {
                             setConfirmationModalOpen(false); // ปิด Dialog
-                            router.push('/utilities/sample-page'); // ใช้ router.push จาก Next.js เพื่อนำทางไปยังหน้าใหม่
+                            router.push('/utilities/sample-car'); // ใช้ router.push จาก Next.js เพื่อนำทางไปยังหน้าใหม่
                           }}
                           color="primary"
                         >
@@ -564,7 +585,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                             </Button>
                             <Button
                               onClick={() => {
-                                // รีเซ็ตค���าข้อความและประเภทเมื่อ Dialog ถูกปิด
+                                // รีเซ็ตค่าข้อความและประเภทเมื่อ Dialog ถูกปิด
                                 setNotificationMessage("");
                                 setNotificationType(null);
                                 setConfirmationModalOpen(false); // ปิด Dialog

@@ -1,21 +1,16 @@
 import { useEffect, useState } from "react";
 import {
-  IconAperture,
-  IconCopy,
-  IconLayoutDashboard,
-  IconLogin,
-  IconMoodHappy,
-  IconTypography,
-  IconUserPlus,
+  IconArtboard,
+  IconCalendarTime,
   IconPackageImport,
   IconArchive,
   IconClipboardCopy,
-  IconCalendarTime,
   IconCar,
-  IconArtboard,
   IconMedicalCrossCircle,
   IconUserCog,
+  IconCopy,
   IconSteeringWheel,
+  IconTruck,
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
 
@@ -23,33 +18,58 @@ const Menuitems = () => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
-  // ตรวจสอบสถานะการล็อกอินเมื่อ component ถูกโหลด
   useEffect(() => {
-    const username = typeof window !== "undefined" ? localStorage.getItem("username") : null;
-    const role = typeof window !== "undefined" ? localStorage.getItem("role") : null;
+    const isClient = typeof window !== "undefined";
+    const username = isClient ? localStorage.getItem("username") || "" : "";
+    let role = isClient ? localStorage.getItem("role") || "" : "";
 
-    console.log("Username:", username); // Debugging line
-    console.log("Role:", role); // Debugging line
+    console.log("Username:", username); // ตรวจสอบค่าของ username
+    console.log("Role:", role); // ตรวจสอบค่าของ role
+
+    // ตั้งค่า role ให้เป็นค่าเดียวกับ username
+    if (username) {
+      localStorage.setItem("role", username);
+      role = username; // กำหนด role ให้เหมือน username
+    }
+
+    if (role === "admin") {
+      setIsAdmin(true); // ถ้า role เป็น "admin" ให้ set isAdmin เป็น true
+    }
 
     if (username && role) {
-      setIsLoggedIn(true);
-      setIsAdmin(role === "admin");  // ถ้าผู้ใช้มีบทบาทเป็น admin
+      setIsLoggedIn(true); // ถ้ามี username และ role ให้ set isLoggedIn เป็น true
     } else {
-      setIsLoggedIn(false);
-      setIsAdmin(false);
+      setIsLoggedIn(false); // ถ้าไม่มีข้อมูล login หรือ role ให้ set เป็น false
+      setIsAdmin(false); // ถ้าไม่มี role เป็น admin ให้ set isAdmin เป็น false
     }
-  }, []); // useEffect จะทำงานเพียงครั้งเดียวเมื่อโหลด component
+  }, []);
 
-  const menuItems = [
+  const defaultMenuItems = [
     {
       navlabel: true,
       subheader: "หน้าหลัก",
     },
     {
       id: uniqueId(),
-      title: "รายการจองวันนี้",
+      title: "รายการจองห้องประชุม",
       icon: IconArtboard,
       href: "/utilities/reportbooking",
+    },
+    {
+      id: uniqueId(),
+      title: "รายการจองยานพาหนะ",
+      icon: IconTruck,
+      href: "/utilities/reportbooking",
+    },
+    {
+      navlabel: true,
+      subheader: "รายการจองของคุณ",
+    },
+    {
+      id: uniqueId(),
+      title: "ประวัติการจอง",
+      icon: IconCalendarTime,
+      href: "/utilities/userRerserved",
     },
     {
       navlabel: true,
@@ -74,12 +94,6 @@ const Menuitems = () => {
       href: "/utilities/room_details",
     },
     {
-      id: uniqueId(),
-      title: "ประวัติการจอง",
-      icon: IconCalendarTime,
-      href: "/utilities/userRerserved",
-    },
-    {
       navlabel: true,
       subheader: "ข้อมูล | จองรถยนต์",
     },
@@ -101,56 +115,48 @@ const Menuitems = () => {
       icon: IconClipboardCopy,
       href: "/utilities/car_details",
     },
-    {
-      id: uniqueId(),
-      title: "ประวัติการจอง",
-      icon: IconCalendarTime,
-      href: "",
-    },
-
-  // ตรวจสอบว่าเป็น admin หรือไม่
-
-  {
-    navlabel: true,
-    subheader: <span style={{ color: "red" }}>Extra</span>,
-  },
-  {
-    id: uniqueId(),
-    title: "Admin",
-    icon: IconMedicalCrossCircle,
-    href: "/utilities/AdminApprove",
-  },
-  {
-    id: uniqueId(),
-    title: "Management",
-    icon: IconUserCog,
-    href: "/icons",
-  },
-  {
-    id: uniqueId(),
-    title: "Edit Rooms",
-    icon: IconCopy,
-    href: "/utilities/shadow",
-  },
-  {
-    id: uniqueId(),
-    title: "Edit Cars",
-    icon: IconSteeringWheel,
-    href: "/sample-page",
-  },
-  {
-    id: uniqueId(),
-    title: "Dashboard for Admin",
-    icon: IconSteeringWheel,
-    href: "/utilities/dashboardPage",
-  }
   ];
 
+  const adminMenuItems = isAdmin
+    ? [
+        {
+          navlabel: true,
+          subheader: <span style={{ color: "red" }}>Extra</span>,
+        },
+        {
+          id: uniqueId(),
+          title: "Admin",
+          icon: IconMedicalCrossCircle,
+          href: "/utilities/AdminApprove",
+        },
+        {
+          id: uniqueId(),
+          title: "Management",
+          icon: IconUserCog,
+          href: "/icons",
+        },
+        {
+          id: uniqueId(),
+          title: "Edit Rooms",
+          icon: IconCopy,
+          href: "/utilities/shadow",
+        },
+        {
+          id: uniqueId(),
+          title: "Edit Cars",
+          icon: IconSteeringWheel,
+          href: "/sample-page",
+        },
+        {
+          id: uniqueId(),
+          title: "Dashboard for Admin",
+          icon: IconSteeringWheel,
+          href: "/utilities/dashboardPage",
+        },
+      ]
+    : [];
 
-
-  console.log("Menu Items:", menuItems); // Debugging line
-
-  return menuItems;
+  return [...defaultMenuItems, ...adminMenuItems];
 };
 
 export default Menuitems;
