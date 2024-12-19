@@ -60,19 +60,24 @@ const RoomDetails = ({ data }: RoomProps) => {
               <Table.Cell dataKey="Room_ID" />
             </Table.Column>
 
-            <Table.Column flexGrow={1}>
+            <Table.Column width={300}>
               <Table.HeaderCell>Room Name</Table.HeaderCell>
               <Table.Cell dataKey="Room_Name" />
             </Table.Column>
 
-            <Table.Column width={120} align="center">
+            <Table.Column width={200} align="center">
               <Table.HeaderCell>Capacity</Table.HeaderCell>
               <Table.Cell dataKey="Capacity" />
             </Table.Column>
 
-            <Table.Column flexGrow={1}>
+            <Table.Column width={150}>
               <Table.HeaderCell>Location</Table.HeaderCell>
               <Table.Cell dataKey="Location" />
+            </Table.Column>
+
+            <Table.Column width={300}>
+              <Table.HeaderCell>Departservice</Table.HeaderCell>
+              <Table.Cell dataKey="departserivce" />
             </Table.Column>
           </Table>
         )}

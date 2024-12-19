@@ -1,7 +1,9 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { motion, AnimatePresence } from 'framer-motion';
 // ใช้ dynamic import สำหรับแต่ละ Component
+
 const Typography = dynamic(() => import('@mui/material/Typography'), { ssr: false, loading: () => <p>Loading Typography...</p> });
 const Table = dynamic(() => import('@mui/material/Table'), { ssr: false, loading: () => <p>Loading Table...</p> });
 const TableHead = dynamic(() => import('@mui/material/TableHead'), { ssr: false, loading: () => <p>Loading TableHead...</p> });
@@ -19,13 +21,96 @@ interface BookingRoom {
   Event_Name: string;
   Department_Name: string;
 }
+
 const Bookingrooms = () => {
   const [data, setData] = useState<BookingRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
   const [currentMeetings, setCurrentMeetings] = useState<BookingRoom[]>([]);
+  const [nextMeeting, setNextMeeting] = useState<BookingRoom | null>(null);
+  const [currentRoomIndex, setCurrentRoomIndex] = useState(0);
+  const [nextMeetingIndex, setNextMeetingIndex] = useState(0);
 
+  // ฟังก์ชันหาการประชุมที่กำลังจะถึง
+  const findNextMeetings = (bookings: BookingRoom[]) => {
+    const now = new Date();
+    const currentTimeStr = now.toLocaleTimeString('en-US', { hour12: false }).slice(0, 5);
+    const currentDate = formatDate(now.toISOString());
+
+    // กรองการจองที่ยังไม่เริ่มในวันนี้
+    const upcomingMeetings = bookings.filter(booking => {
+      const bookingDate = formatDate(booking.Start_date);
+      if (bookingDate === currentDate) {
+        return booking.Start_Time > currentTimeStr;
+      }
+      return false;
+    });
+
+    // เรียงตามเวลาเริ่มต้น
+    return upcomingMeetings.sort((a, b) =>
+      a.Start_Time.localeCompare(b.Start_Time)
+    );
+  };
+
+  // ฟังก์ชันหาการประชุมที่กำลังจะถึงและถัดๆไปอีก
+  useEffect(() => {
+    const nextMeetings = findNextMeetings(data);
+    // เช็คว่ามีการประชุมถัดไปมากกว่า 1 รายการหรือไม่
+    if (nextMeetings.length > 1) {
+      const rotationInterval = setInterval(() => {
+        setNextMeetingIndex(prev => (prev + 1) % nextMeetings.length);
+      }, 5000); // 3000 (3 วินาที)  5000 (5 วินาที)
+      return () => clearInterval(rotationInterval);
+    } else {
+      //ถ้ามีแค่รายการเดียว ให้ตั้ง index เป็น  0
+      setNextMeetingIndex(0);
+    }
+  }, [data]);
+
+  // ฟังก์ชันแปลงเวลาเพื่อใช้สำหรับอัพเดททุกวินาที
+  const convertTimeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // อัพเดท useEffect ที่มีการอัพเดททุกวินาที
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const now = new Date();
+      const time = now.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      setCurrentTime(time);
+
+      const todayMeetings = filterCurrentDateBookings(data);
+      const ongoing = todayMeetings.filter((booking) => {
+        const currentTimeMinutes = convertTimeToMinutes(time);
+        const startTimeMinutes = convertTimeToMinutes(booking.Start_Time);
+        const endTimeMinutes = convertTimeToMinutes(booking.End_Time);
+        return currentTimeMinutes >= startTimeMinutes && currentTimeMinutes <= endTimeMinutes;
+      });
+
+      setCurrentMeetings(ongoing);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [data]);
+
+  // ฟังก์ชันสำหรับการหมุนระหว่างห้องประชุม
+  useEffect(() => {
+    if (currentMeetings.length <= 1) return;
+
+    const rotationTimer = setInterval(() => {
+      setCurrentRoomIndex((prev) => (prev + 1) % currentMeetings.length);
+    }, 5000);
+
+    return () => clearInterval(rotationTimer);
+  }, [currentMeetings.length]);
+
+  // อัพเดท useEffect ที่มีการอัพเดททุกวินาที
   useEffect(() => {
     const intervalId = setInterval(() => {
       const now = new Date();
@@ -34,27 +119,33 @@ const Bookingrooms = () => {
       const date = formatDate(now.toISOString());
       setCurrentDate(date);
 
+
       // กรองการประชุมเฉพาะวันปัจจุบัน
       const todayMeetings = filterCurrentDateBookings(data);
 
-      // แก้ไขการค้นหาการประชุมที่กำลังเกิดขึ้น
+      // หาการประชุมที่กำลังเกิดขึ้น
       const ongoingMeetings = todayMeetings.filter((booking) => {
         const currentTimeMinutes = convertTimeToMinutes(currentTime);
         const startTimeMinutes = convertTimeToMinutes(booking.Start_Time);
         const endTimeMinutes = convertTimeToMinutes(booking.End_Time);
-
         return currentTimeMinutes >= startTimeMinutes && currentTimeMinutes <= endTimeMinutes;
       });
 
+      // หาการประชุมที่กำลังจะถึง
+      const next = findNextMeetings(todayMeetings);
+      setNextMeeting(next[0] || null);
       setCurrentMeetings(ongoingMeetings);
     }, 1000);
 
     return () => clearInterval(intervalId);
   }, [data, currentTime]);
-  const convertTimeToMinutes = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
+
+  // แก้ไขส่วนแสดงผลการประชุมที่กำลังจะถึง
+  const renderNextMeeting = () => {
+    if (!nextMeeting) return "No upcoming meetings";
+    return `${nextMeeting.Room_Name} - ${nextMeeting.Event_Name} (${formatTime(nextMeeting.Start_Time)}-${formatTime(nextMeeting.End_Time)})`;
   };
+
   // ดึงข้อมูลการจองห้องประชุม
   useEffect(() => {
     const fetchData = async () => {
@@ -71,14 +162,13 @@ const Bookingrooms = () => {
     };
     fetchData();
   }, []);
-
-
   const formatDate = (isoDate: string) => {
     const date = new Date(isoDate);
     return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
   };
   const formatTime = (time: string) => time.slice(0, 5);
 
+  //หาห้องที่กำลังประชุม
   const filterCurrentDateBookings = (bookings: BookingRoom[]) => {
     const today = new Date();
     const formattedDate = formatDate(today.toISOString());
@@ -95,6 +185,7 @@ const Bookingrooms = () => {
     });
   };
 
+  // sort ข้อมูลฝนตาราง
   const sortBookingsByTime = (bookings: BookingRoom[]) => {
     return bookings.sort((a, b) => {
       // เรียงตามเวลาเริ่มต้น
@@ -118,6 +209,8 @@ const Bookingrooms = () => {
   if (loading) {
     return <div>Loading...</div>;
   }
+
+  //ตัวแปรสำหรับการลูบข้อความ (เลื่อนข้อความที่กำลังประชุม)
   const scrollStyles = `
       @keyframes scrollLeft {
         0% { transform: translateX(0); }
@@ -131,6 +224,7 @@ const Bookingrooms = () => {
         animation-play-state: paused;
       }
     `;
+
 
   return (
     <div style={{ width: '90%', margin: '0 auto', padding: '20px' }}>
@@ -175,7 +269,7 @@ const Bookingrooms = () => {
           overflow: 'hidden'
         }}>
           <div className="scroll-container" style={{
-            animation: 'scrollLeft 60s linear infinite',
+            animation: 'scrollLeft 63s linear infinite',
             whiteSpace: 'nowrap',
             width: 'fit-content'
           }}>
@@ -207,8 +301,41 @@ const Bookingrooms = () => {
         </div>
       )}
 
+      {/* Next Meeting */}
+     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '5px',justifyContent: 'center' }}>
+        <AnimatePresence mode="wait">
+          {findNextMeetings(data).length > 0 ? (
+            <motion.div
+              key={nextMeetingIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Typography variant="h6" sx={{ display: 'inline', color: '#666666' }}> Next :
+                [ {findNextMeetings(data)[nextMeetingIndex]?.Room_Name} ] {findNextMeetings(data)[nextMeetingIndex]?.Event_Name} [ {formatTime(findNextMeetings(data)[nextMeetingIndex]?.Start_Time)} -
+                {formatTime(findNextMeetings(data)[nextMeetingIndex]?.End_Time)} ]
+              </Typography>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Typography variant="h6" sx={{
+                fontStyle: 'italic',
+                color: '#666',
+                display: 'inline'
+              }}>
+                {/* ไม่มีการประชุมที่กำลังจะมาถึง */}
+              </Typography>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       {/* ตารางข้อมูลการจอง */}
-      <Table sx={{ border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden', marginTop: '20px' }}>
+      <Table sx={{ border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden', marginTop: '5px' }}>
         <TableHead>
           <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
             <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>Room</TableCell>
@@ -236,6 +363,7 @@ const Bookingrooms = () => {
           ))}
         </TableBody>
       </Table>
+
       {/* ส่วนท้าย */}
         <a href="/utilities/meeting_room" style={{ textDecoration: 'none' }}>
         <Typography
@@ -254,7 +382,9 @@ const Bookingrooms = () => {
         </Typography>
       </a>
     </div>
+
     </div>
+
   );
 };
 

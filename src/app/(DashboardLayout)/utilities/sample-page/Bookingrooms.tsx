@@ -167,10 +167,6 @@ const Bookingrooms = ({ data }: BookingroomsProps) => {
                 <table style={{ width: '100%', marginTop: '20px' }}>
                   <tbody>
                     <tr>
-                      <td style={{ padding: '8px', fontSize: '16px', width: '42%', textAlign: 'right' }}><strong>Room Name:</strong></td>
-                      <td style={{ padding: '8px', fontSize: '16px' }}>{selectedEvent.Room_Name}</td>
-                    </tr>
-                    <tr>
                       <td style={{ padding: '8px', fontSize: '16px', textAlign: 'right' }}><strong>หัวข้อการประชุม:</strong></td>
                       <td style={{ padding: '8px', fontSize: '16px' }}>{selectedEvent.Event_Name}</td>
                     </tr>
@@ -194,7 +190,7 @@ const Bookingrooms = ({ data }: BookingroomsProps) => {
                     </tr>
                     <tr>
                       <td style={{ padding: '8px', fontSize: '16px', textAlign: 'right' }}><strong>เวลา:</strong></td>
-                      <td style={{ padding: '8px', fontSize: '16px' }}>{selectedEvent.Start_Time} - {selectedEvent.End_Time}</td>
+                      <td style={{ padding: '8px', fontSize: '16px' }}>{selectedEvent.Start_Time.slice(0, 5)} - {selectedEvent.End_Time.slice(0, 5)}</td>
                     </tr>
                     <tr>
                       <td style={{ padding: '8px', fontSize: '16px', textAlign: 'right' }}><strong>Department:</strong></td>

@@ -60,23 +60,28 @@ const RoomDetails = ({ data }: CarProps) => {
             style={{ border: '1px solid #e5e5e5', borderRadius: '8px' }}
           >
             <Table.Column width={100} align="center" fixed>
-              <Table.HeaderCell>Car ID</Table.HeaderCell>
+              <Table.HeaderCell>Room ID</Table.HeaderCell>
               <Table.Cell dataKey="Car_ID" />
             </Table.Column>
 
-            <Table.Column flexGrow={1}>
-              <Table.HeaderCell>Car Name</Table.HeaderCell>
+            <Table.Column width={300}>
+              <Table.HeaderCell>Room Name</Table.HeaderCell>
               <Table.Cell dataKey="Car_Name" />
             </Table.Column>
 
-            <Table.Column width={120} align="center">
+            <Table.Column width={200} align="center">
               <Table.HeaderCell>Capacity</Table.HeaderCell>
               <Table.Cell dataKey="Capacity" />
             </Table.Column>
 
-            <Table.Column flexGrow={1}>
+            <Table.Column width={150}>
               <Table.HeaderCell>Location</Table.HeaderCell>
               <Table.Cell dataKey="Location_cars" />
+            </Table.Column>
+
+            <Table.Column width={300}>
+              <Table.HeaderCell>Departservice</Table.HeaderCell>
+              <Table.Cell dataKey="Carservice" />
             </Table.Column>
           </Table>
         )}

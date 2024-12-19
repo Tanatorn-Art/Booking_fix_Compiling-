@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { Grid, Box, Card, Typography, Button, TextField,Stack } from "@mui/material";
 import { useToaster, Notification } from "rsuite";
 import { signIn } from "next-auth/react"; // ใช้ signIn จาก next-auth/react
@@ -48,6 +48,26 @@ const Login2 = () => {
       );
     }
   };
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const username = formData.get('username')
+    const password = formData.get('password')
+
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+
+    if (response.ok) {
+      router.push('/utilities/sample-page')
+    } else {
+      // Handle errors
+    }
+  }
 
   return (
     <PageContainer title="Login" description="this is Login page">
@@ -101,6 +121,7 @@ const Login2 = () => {
                     {errorMessage}
                   </Typography>
                 )}
+                <form onSubmit={handleSubmit}>
                 <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }}>
                   Login
                 </Button>
@@ -130,6 +151,7 @@ const Login2 = () => {
                     Register
                   </Typography>
                 </Stack>
+                </form>
 
               </form>
             </Card>

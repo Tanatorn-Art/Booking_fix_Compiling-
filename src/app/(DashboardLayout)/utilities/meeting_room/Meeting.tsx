@@ -461,7 +461,7 @@ const Meeting: React.FC<BtnServesProps> = ({
                     <div style= {{display: "flex", marginTop: "10px", marginLeft: "10px"}}>
                         <Typography variant="subtitle1" style={{
                                   marginRight: "8px",
-                                  fontSize: "16px" }}>
+                                  fontSize: "16px" }}>``
                           ผู้จอง : {username}
                         </Typography>
                     </div>

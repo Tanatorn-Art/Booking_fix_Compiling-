@@ -11,6 +11,7 @@ import {
   IconCopy,
   IconSteeringWheel,
   IconTruck,
+  IconChartDots,
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
 
@@ -43,6 +44,45 @@ const Menuitems = () => {
       setIsAdmin(false); // ถ้าไม่มี role เป็น admin ให้ set isAdmin เป็น false
     }
   }, []);
+  const adminMenuItems = isAdmin
+  ? [
+      {
+        navlabel: true,
+        subheader: <span style={{ color: "red" }}>Extra</span>,
+      },
+      {
+        id: uniqueId(),
+        title: "Management",
+        icon: IconUserCog,
+        href: "/utilities/MenuAdmin",
+      },
+      {
+        id: uniqueId(),
+        title: "Dashboard",
+        icon: IconChartDots,
+        href: "/utilities/dashboardPage",
+      },
+      {
+        id: uniqueId(),
+        title: "Request approval",
+        icon: IconMedicalCrossCircle,
+        href: "/utilities/AdminApprove",
+      },
+      // {
+      //   id: uniqueId(),
+      //   title: "Edit Rooms",
+      //   icon: IconCopy,
+      //   href: "/utilities/EventMap",
+      // },
+      // {
+      //   id: uniqueId(),
+      //   title: "Edit Cars",
+      //   icon: IconSteeringWheel,
+      //   href: "/icons",
+      // },
+    ]
+  : [];
+
 
   const defaultMenuItems = [
     {
@@ -59,7 +99,7 @@ const Menuitems = () => {
       id: uniqueId(),
       title: "รายการจองยานพาหนะ",
       icon: IconTruck,
-      href: "/utilities/reportbooking",
+      href: "/utilities/MapGps",
     },
     {
       navlabel: true,
@@ -117,46 +157,8 @@ const Menuitems = () => {
     },
   ];
 
-  const adminMenuItems = isAdmin
-    ? [
-        {
-          navlabel: true,
-          subheader: <span style={{ color: "red" }}>Extra</span>,
-        },
-        {
-          id: uniqueId(),
-          title: "Admin",
-          icon: IconMedicalCrossCircle,
-          href: "/utilities/AdminApprove",
-        },
-        {
-          id: uniqueId(),
-          title: "Management",
-          icon: IconUserCog,
-          href: "/icons",
-        },
-        {
-          id: uniqueId(),
-          title: "Edit Rooms",
-          icon: IconCopy,
-          href: "/utilities/shadow",
-        },
-        {
-          id: uniqueId(),
-          title: "Edit Cars",
-          icon: IconSteeringWheel,
-          href: "/sample-page",
-        },
-        {
-          id: uniqueId(),
-          title: "Dashboard for Admin",
-          icon: IconSteeringWheel,
-          href: "/utilities/dashboardPage",
-        },
-      ]
-    : [];
 
-  return [...defaultMenuItems, ...adminMenuItems];
+  return [...adminMenuItems, ...defaultMenuItems ];
 };
 
 export default Menuitems;
